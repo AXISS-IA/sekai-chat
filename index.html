@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sekai - Paso 2 Fix</title>
+    <title>Sekai Private Fix</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -21,73 +21,77 @@
         
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
-        const globalRef = ref(db, 'messages/global');
 
+        // 1. VARIABLE PARA LA SALA ACTUAL
+        let currentRoom = "global"; 
         let userName = localStorage.getItem('sekai_user') || prompt("Tu nombre:") || "User";
         let userPic = localStorage.getItem('sekai_pic') || "https://i.imgur.com/6VBx3io.png";
         localStorage.setItem('sekai_user', userName);
 
-        // --- ENVIAR ---
-        window.sendMessage = (type, content) => {
-            if (content) {
-                push(globalRef, { user: userName, pic: userPic, type: type, content: content, timestamp: serverTimestamp() });
-                document.getElementById('user-input').value = "";
-            }
+        // 2. FUNCIÓN PARA CARGAR MENSAJES DE CUALQUIER SALA
+        window.loadMessages = (roomID) => {
+            currentRoom = roomID;
+            const box = document.getElementById('chat-box');
+            box.innerHTML = ""; // Limpia el chat al cambiar de sala
+            
+            const roomRef = ref(db, 'messages/' + roomID);
+            onChildAdded(roomRef, (data) => {
+                renderMessage(data.val());
+            });
         };
 
-        // --- IMAGEN ---
-        window.uploadImg = (e) => {
-            const f = e.target.files[0];
-            const r = new FileReader();
-            r.onloadend = () => window.sendMessage('image', r.result);
-            if(f) r.readAsDataURL(f);
-        };
-
-        // --- AUDIO ---
-        let media; let chunks = [];
-        window.startRec = async () => {
-            const s = await navigator.mediaDevices.getUserMedia({ audio: true });
-            media = new MediaRecorder(s);
-            media.ondataavailable = e => chunks.push(e.data);
-            media.onstop = () => {
-                const b = new Blob(chunks, { type: 'audio/webm' });
-                const r = new FileReader();
-                r.onloadend = () => window.sendMessage('audio', r.result);
-                r.readAsDataURL(b);
-                chunks = [];
-            };
-            media.start();
-            document.getElementById('mic-btn').classList.add('bg-red-600', 'animate-pulse');
-        };
-        window.stopRec = () => { if(media) { media.stop(); document.getElementById('mic-btn').classList.remove('bg-red-600', 'animate-pulse'); } };
-
-        // --- ABRIR PERFIL ---
-        window.openProfile = (n, p) => {
-            document.getElementById('p-img').src = p;
-            document.getElementById('p-name').innerText = n;
-            document.getElementById('profile-modal').style.display = 'flex';
-        };
-
-        // --- RECIBIR ---
-        onChildAdded(globalRef, (data) => {
-            const msg = data.val();
+        // 3. FUNCIÓN PARA DIBUJAR LOS MENSAJES
+        function renderMessage(msg) {
             const box = document.getElementById('chat-box');
             const isMe = msg.user === userName;
             const div = document.createElement('div');
             div.className = `flex ${isMe ? 'flex-row-reverse' : 'flex-row'} items-end gap-2 mb-4 animate-pop`;
             
-            let body = msg.type === 'text' ? `<p class="text-sm">${msg.content}</p>` :
-                       msg.type === 'image' ? `<img src="${msg.content}" class="rounded-lg">` :
-                       `<audio controls src="${msg.content}" class="w-44 h-8"></audio>`;
+            let content = msg.type === 'image' ? `<img src="${msg.content}" class="rounded-lg">` :
+                          msg.type === 'audio' ? `<audio controls src="${msg.content}" class="w-44 h-8"></audio>` :
+                          `<p class="text-sm">${msg.content}</p>`;
 
             div.innerHTML = `
-                <img src="${msg.pic}" onclick="openProfile('${msg.user}', '${msg.pic}')" class="w-9 h-9 rounded-full object-cover border border-cyan-500 cursor-pointer shadow-md">
+                <img src="${msg.pic}" onclick="openProfile('${msg.user}', '${msg.pic}')" class="w-9 h-9 rounded-full object-cover border border-cyan-500 cursor-pointer">
                 <div class="max-w-[75%] p-3 rounded-2xl ${isMe ? 'bg-cyan-600/40' : 'bg-zinc-800'} border border-white/5">
-                    ${body}
+                    ${content}
                 </div>`;
             box.appendChild(div);
             box.scrollTop = box.scrollHeight;
-        });
+        }
+
+        // ENVIAR MENSAJE A LA SALA DONDE ESTÉS
+        window.sendMessage = (type, content) => {
+            if (content) {
+                const roomRef = ref(db, 'messages/' + currentRoom);
+                push(roomRef, { user: userName, pic: userPic, type: type, content: content, timestamp: serverTimestamp() });
+                document.getElementById('user-input').value = "";
+            }
+        };
+
+        // MULTIMEDIA
+        window.uploadImg = (e) => {
+            const r = new FileReader(); r.onloadend = () => window.sendMessage('image', r.result);
+            if(e.target.files[0]) r.readAsDataURL(e.target.files[0]);
+        };
+
+        // ABRIR PERFIL Y ACTIVAR BOTÓN PRIVADO
+        window.openProfile = (name, pic) => {
+            document.getElementById('p-img').src = pic;
+            document.getElementById('p-name').innerText = name;
+            document.getElementById('profile-modal').style.display = 'flex';
+            
+            // EL BOTÓN MÁGICO
+            document.getElementById('private-btn').onclick = () => {
+                const privateID = [userName, name].sort().join("_");
+                document.getElementById('room-title').innerText = "Privado: " + name;
+                document.getElementById('profile-modal').style.display = 'none';
+                window.loadMessages(privateID); // Cambia a la sala privada
+            };
+        };
+
+        // EMPEZAR EN LA SALA GLOBAL
+        window.loadMessages("global");
     </script>
     <style>
         body { background: #000; color: white; font-family: sans-serif; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; margin: 0; }
@@ -98,20 +102,20 @@
 <body>
 
     <div id="profile-modal" style="display:none" class="fixed inset-0 bg-black/95 z-[100] items-center justify-center p-6">
-        <div class="bg-zinc-900 w-full max-w-xs rounded-3xl border border-white/10 p-6 text-center shadow-2xl">
+        <div class="bg-zinc-900 w-full max-w-xs rounded-3xl border border-white/10 p-6 text-center">
             <img id="p-img" class="w-24 h-24 rounded-full border-4 border-cyan-500 object-cover mx-auto mb-4">
             <h2 id="p-name" class="text-xl font-bold mb-6"></h2>
             <div class="flex gap-2">
-                <button class="flex-1 bg-white text-black font-bold py-3 rounded-xl">Mensaje Privado</button>
-                <button onclick="document.getElementById('profile-modal').style.display='none'" class="bg-zinc-800 px-4 rounded-xl text-white border border-white/10">✕</button>
+                <button id="private-btn" class="flex-1 bg-white text-black font-bold py-3 rounded-xl">Mensaje Privado</button>
+                <button onclick="document.getElementById('profile-modal').style.display='none'" class="bg-zinc-800 px-4 rounded-xl">✕</button>
             </div>
         </div>
     </div>
 
     <header class="p-4 border-b border-white/10 bg-zinc-950 flex justify-between items-center">
         <div>
-            <h1 class="text-cyan-400 font-bold text-xs uppercase tracking-widest">Sekai Chat</h1>
-            <p class="text-lg font-bold">Sala Global</p>
+            <h1 class="text-cyan-400 font-bold text-xs uppercase">Sekai Chat</h1>
+            <p id="room-title" class="text-lg font-bold">Sala Global</p>
         </div>
         <button onclick="location.reload()" class="bg-white/5 px-4 py-1 rounded-full text-[10px] border border-white/10">SALIR</button>
     </header>
@@ -120,12 +124,11 @@
 
     <footer class="p-4 bg-zinc-900 border-t border-white/10">
         <div class="flex gap-2 items-center max-w-screen-md mx-auto">
-            <label class="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center text-xl cursor-pointer border border-white/10">
+            <label class="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center text-xl border border-white/10 cursor-pointer">
                 🖼️<input type="file" accept="image/*" class="hidden" onchange="window.uploadImg(event)">
             </label>
-            <button id="mic-btn" onmousedown="startRec()" onmouseup="stopRec()" ontouchstart="startRec()" ontouchend="stopRec()" class="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center text-xl border border-white/10">🎙️</button>
             <input type="text" id="user-input" onkeypress="if(event.key==='Enter') window.sendMessage('text', this.value)" placeholder="Escribe..." class="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-sm outline-none">
-            <button onclick="window.sendMessage('text', document.getElementById('user-input').value)" class="w-12 h-12 bg-cyan-500 rounded-full flex items-center justify-center text-black">➤</button>
+            <button onclick="window.sendMessage('text', document.getElementById('user-input').value)" class="w-12 h-12 bg-cyan-500 rounded-full flex items-center justify-center text-black font-bold">➤</button>
         </div>
     </footer>
 
