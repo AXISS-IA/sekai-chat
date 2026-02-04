@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sekai Social</title>
+    <title>Sekai Ultimate v5</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -21,112 +21,151 @@
         
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
-        
-        // --- LÓGICA DE SALAS ---
-        let currentRoom = "global"; 
+
+        let currentRoom = "global";
         let userName = localStorage.getItem('sekai_user') || prompt("Tu nombre:") || "Pilot";
         let userPic = localStorage.getItem('sekai_pic') || prompt("Link de tu foto:") || "https://i.imgur.com/6VBx3io.png";
+        let userStatus = localStorage.getItem('sekai_status') || prompt("Tu estado (ej: En el Sekai 🌌):") || "Disponible";
+
         localStorage.setItem('sekai_user', userName);
         localStorage.setItem('sekai_pic', userPic);
+        localStorage.setItem('sekai_status', userStatus);
 
-        const loadMessages = (roomID) => {
-            document.getElementById('chat-box').innerHTML = "";
-            const roomRef = ref(db, 'messages/' + roomID);
-            onChildAdded(roomRef, (data) => {
-                const msg = data.val();
-                renderMessage(msg);
-            });
+        // --- SISTEMA DE AUDIO ---
+        let mediaRecorder;
+        let audioChunks = [];
+
+        window.startRecording = async () => {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+            mediaRecorder.onstop = async () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                const reader = new FileReader();
+                reader.readAsDataURL(audioBlob);
+                reader.onloadend = () => window.sendMessage('audio', reader.result);
+                audioChunks = [];
+            };
+            mediaRecorder.start();
+            document.getElementById('mic-btn').classList.add('animate-pulse', 'text-red-500');
         };
 
+        window.stopRecording = () => {
+            if(mediaRecorder) {
+                mediaRecorder.stop();
+                document.getElementById('mic-btn').classList.remove('animate-pulse', 'text-red-500');
+            }
+        };
+
+        // --- ENVIAR MENSAJES ---
         window.sendMessage = function(type = 'text', content = document.getElementById('user-input').value) {
-            if (content.trim() !== "" || type === 'image') {
+            if (content || type === 'audio' || type === 'image') {
                 const roomRef = ref(db, 'messages/' + currentRoom);
                 push(roomRef, {
-                    user: userName, pic: userPic, type: type, content: content, timestamp: serverTimestamp() 
+                    user: userName, pic: userPic, status: userStatus,
+                    type: type, content: content, timestamp: serverTimestamp() 
                 });
                 document.getElementById('user-input').value = "";
             }
         };
 
-        // --- VER PERFIL ESTILO INSTAGRAM ---
-        window.openProfile = function(name, pic) {
-            document.getElementById('profile-card-img').src = pic;
-            document.getElementById('profile-card-name').innerText = name;
-            document.getElementById('profile-modal').classList.remove('hidden');
-            document.getElementById('profile-modal').classList.add('flex');
-            
-            // Botón Chat Privado
-            document.getElementById('private-btn').onclick = () => {
-                const privateID = [userName, name].sort().join("_");
-                currentRoom = privateID;
-                document.getElementById('room-name').innerText = "Privado: " + name;
-                document.getElementById('profile-modal').classList.add('hidden');
-                loadMessages(privateID);
-            };
+        // --- TRADUCTOR ---
+        window.translateMsg = async (text, elementId) => {
+            const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=es&dt=t&q=${encodeURI(text)}`);
+            const data = await res.json();
+            document.getElementById(elementId).innerText = "🇲🇽 " + data[0][0][0];
         };
 
-        function renderMessage(msg) {
+        // --- RENDERIZADO ---
+        const loadMessages = (roomID) => {
             const box = document.getElementById('chat-box');
-            const div = document.createElement('div');
-            const isMe = msg.user === userName;
-            const date = msg.timestamp ? new Date(msg.timestamp) : new Date();
-            const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            box.innerHTML = "";
+            onChildAdded(ref(db, 'messages/' + roomID), (data) => {
+                const msg = data.val();
+                const isMe = msg.user === userName;
+                const msgId = data.key;
+                const div = document.createElement('div');
+                div.className = `flex ${isMe ? 'flex-row-reverse' : 'flex-row'} items-end gap-2 mb-4 animate-pop`;
+                
+                let body = "";
+                if(msg.type === 'text') body = `<p id="text-${msgId}" class="text-sm text-white">${msg.content}</p>
+                    <button onclick="translateMsg('${msg.content}', 'text-${msgId}')" class="text-[10px] text-cyan-400 mt-1 uppercase font-bold">🌐 Traducir</button>`;
+                if(msg.type === 'image') body = `<img src="${msg.content}" class="rounded-xl max-w-full shadow-lg">`;
+                if(msg.type === 'audio') body = `<audio controls src="${msg.content}" class="w-48 h-8"></audio>`;
 
-            div.className = `flex ${isMe ? 'flex-row-reverse' : 'flex-row'} items-end gap-2 mb-4 animate-pop`;
-            div.innerHTML = `
-                <img src="${msg.pic}" onclick="openProfile('${msg.user}', '${msg.pic}')" class="w-9 h-9 rounded-full border border-cyan-500 object-cover cursor-pointer">
-                <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[75%]">
-                    <div class="${isMe ? 'bg-cyan-600/40' : 'bg-zinc-800'} p-3 rounded-2xl ${isMe ? 'rounded-br-none' : 'rounded-bl-none'} border border-white/5 shadow-xl">
-                        ${msg.type === 'image' ? `<img src="${msg.content}" class="rounded-lg">` : `<p class="text-[14px] text-white">${msg.content}</p>`}
-                        <span class="text-[8px] text-gray-400 block mt-1">${timeStr} ${isMe ? '✓✓' : ''}</span>
+                div.innerHTML = `
+                    <img src="${msg.pic}" onclick="openProfile('${msg.user}', '${msg.pic}', '${msg.status}')" class="w-10 h-10 rounded-full border-2 border-cyan-500 object-cover cursor-pointer">
+                    <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[70%]">
+                        <div class="${isMe ? 'bg-cyan-600/30' : 'bg-zinc-800/80'} p-3 rounded-2xl ${isMe ? 'rounded-br-none' : 'rounded-bl-none'} backdrop-blur-md border border-white/10 shadow-xl">
+                            ${body}
+                        </div>
                     </div>
-                </div>
-            `;
-            box.appendChild(div);
-            box.scrollTop = box.scrollHeight;
-        }
+                `;
+                box.appendChild(div);
+                box.scrollTop = box.scrollHeight;
+            });
+        };
+
+        window.openProfile = (name, pic, status) => {
+            document.getElementById('p-img').src = pic;
+            document.getElementById('p-name').innerText = name;
+            document.getElementById('p-status').innerText = "📍 " + (status || "Disponible");
+            document.getElementById('profile-modal').style.display = 'flex';
+            document.getElementById('private-btn').onclick = () => {
+                currentRoom = [userName, name].sort().join("_");
+                document.getElementById('room-title').innerText = "Chat con " + name;
+                document.getElementById('profile-modal').style.display = 'none';
+                loadMessages(currentRoom);
+            };
+        };
 
         loadMessages(currentRoom);
     </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700&display=swap');
-        body { background: #000; font-family: 'Plus Jakarta Sans', sans-serif; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
-        .animate-pop { animation: pop 0.3s ease-out; }
-        @keyframes pop { from { opacity:0; transform:scale(0.8); } to { opacity:1; transform:scale(1); } }
+        body { background: #000; font-family: sans-serif; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+        .animate-pop { animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes pop { from { opacity:0; transform:scale(0.9); } to { opacity:1; transform:scale(1); } }
+        audio::-webkit-media-controls-panel { background-color: #22d3ee; }
     </style>
 </head>
 <body class="text-white">
 
-    <div id="profile-modal" class="fixed inset-0 bg-black/90 z-[100] hidden items-center justify-center p-6">
-        <div class="bg-zinc-900 w-full max-w-xs rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
-            <div class="h-24 bg-gradient-to-r from-purple-600 to-cyan-600"></div>
-            <div class="px-6 pb-6 flex flex-col items-center -mt-12">
-                <img id="profile-card-img" class="w-24 h-24 rounded-full border-4 border-zinc-900 object-cover mb-3">
-                <h2 id="profile-card-name" class="text-xl font-bold"></h2>
-                <p class="text-gray-400 text-sm mb-6">Usuario de Sekai</p>
-                <div class="flex gap-2 w-full">
-                    <button id="private-btn" class="flex-1 bg-white text-black font-bold py-2 rounded-xl text-sm">Mensaje Privado</button>
-                    <button onclick="location.reload()" class="bg-zinc-800 px-4 py-2 rounded-xl text-sm border border-white/10">Cerrar</button>
+    <div id="profile-modal" style="display:none" class="fixed inset-0 bg-black/95 z-[100] items-center justify-center p-6">
+        <div class="bg-zinc-900 w-full max-w-xs rounded-[2rem] overflow-hidden shadow-2xl border border-white/10">
+            <div class="h-32 bg-gradient-to-br from-cyan-500 to-purple-600 flex items-end justify-center pb-4">
+                <img id="p-img" class="w-24 h-24 rounded-full border-4 border-zinc-900 object-cover translate-y-12">
+            </div>
+            <div class="pt-16 pb-8 px-6 text-center">
+                <h2 id="p-name" class="text-2xl font-bold"></h2>
+                <p id="p-status" class="text-cyan-400 text-sm mt-1 font-medium italic"></p>
+                <div class="mt-8 flex gap-2">
+                    <button id="private-btn" class="flex-1 bg-white text-black font-bold py-3 rounded-2xl active:scale-95 transition">Chat Privado</button>
+                    <button onclick="this.parentElement.parentElement.parentElement.parentElement.style.display='none'" class="bg-zinc-800 px-4 py-3 rounded-2xl border border-white/10">✕</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <header class="p-4 border-b border-white/10 flex justify-between items-center bg-black/50 backdrop-blur-lg">
+    <header class="p-4 bg-zinc-950/50 backdrop-blur-xl border-b border-white/10 flex justify-between items-center">
         <div>
-            <h1 class="text-xs font-bold text-cyan-400 tracking-[0.2em] uppercase">Sekai Chat</h1>
-            <p id="room-name" class="text-lg font-bold">Sala Global</p>
+            <h1 id="room-title" class="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-purple-400">Sala Global</h1>
+            <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Sekai Connection</p>
         </div>
-        <button onclick="location.reload()" class="text-xs border border-white/20 px-3 py-1 rounded-full uppercase">Salir</button>
+        <button onclick="location.reload()" class="bg-white/5 p-2 rounded-full border border-white/10 text-xs font-bold px-4">SALIR</button>
     </header>
 
-    <main id="chat-box" class="flex-1 overflow-y-auto p-4 space-y-4"></main>
+    <main id="chat-box" class="flex-1 overflow-y-auto p-4 space-y-4 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></main>
 
-    <footer class="p-4 bg-zinc-950/80 border-t border-white/10">
-        <div class="flex gap-3 items-center">
-            <input type="text" id="user-input" placeholder="Enviar mensaje..." class="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 outline-none text-sm">
-            <button onclick="window.sendMessage()" class="w-12 h-12 bg-white rounded-full flex items-center justify-center text-black font-bold transition-transform active:scale-90">➤</button>
+    <footer class="p-4 bg-black/90 border-t border-white/5 shadow-2xl">
+        <div class="flex gap-2 items-center max-w-screen-md mx-auto">
+            <button id="mic-btn" onmousedown="startRecording()" onmouseup="stopRecording()" ontouchstart="startRecording()" ontouchend="stopRecording()" class="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center text-xl border border-white/10">🎙️</button>
+            <label class="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center text-xl border border-white/10 cursor-pointer">
+                🖼️<input type="file" accept="image/*" class="hidden" onchange="window.uploadImage(event)">
+            </label>
+            <input type="text" id="user-input" placeholder="Escribe al Sekai..." class="flex-1 bg-zinc-900/50 border border-white/10 rounded-2xl px-4 py-3 text-sm outline-none focus:border-cyan-500">
+            <button onclick="window.sendMessage()" class="w-12 h-12 bg-cyan-500 rounded-full flex items-center justify-center text-black shadow-lg shadow-cyan-500/30">➤</button>
         </div>
     </footer>
+
 </body>
 </html>
