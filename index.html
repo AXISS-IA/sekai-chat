@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sekai Private Fix</title>
+    <title>Sekai Ultimate v6</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -22,105 +22,137 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // 1. VARIABLE PARA LA SALA ACTUAL
-        let currentRoom = "global"; 
-        let userName = localStorage.getItem('sekai_user') || prompt("Tu nombre:") || "User";
+        let currentRoom = "global";
+        let userName = localStorage.getItem('sekai_user') || prompt("Tu nombre:") || "Pilot";
         let userPic = localStorage.getItem('sekai_pic') || "https://i.imgur.com/6VBx3io.png";
+        let selectedSound = localStorage.getItem('sekai_sound') || "https://www.myinstants.com/media/sounds/tuturu_1.mp3";
+
         localStorage.setItem('sekai_user', userName);
 
-        // 2. FUNCIÓN PARA CARGAR MENSAJES DE CUALQUIER SALA
+        // --- BIBLIOTECA DE SONIDOS ---
+        const animeSounds = {
+            "Tuturu": "https://www.myinstants.com/media/sounds/tuturu_1.mp3",
+            "Nani?!": "https://www.myinstants.com/media/sounds/nani_n89PrS9.mp3",
+            "Goku": "https://www.myinstants.com/media/sounds/goku-screaming-meme.mp3",
+            "SAO": "https://www.myinstants.com/media/sounds/sao-message-notification.mp3",
+            "Yamete": "https://www.myinstants.com/media/sounds/yamete_kudasai.mp3"
+        };
+
+        window.changeSound = (name) => {
+            selectedSound = animeSounds[name];
+            localStorage.setItem('sekai_sound', selectedSound);
+            new Audio(selectedSound).play();
+            document.getElementById('sound-menu').classList.add('hidden');
+        };
+
+        // --- CARGAR SALA Y NOTIFICAR ---
         window.loadMessages = (roomID) => {
             currentRoom = roomID;
             const box = document.getElementById('chat-box');
-            box.innerHTML = ""; // Limpia el chat al cambiar de sala
+            box.innerHTML = "";
             
             const roomRef = ref(db, 'messages/' + roomID);
+            let firstLoad = true;
+
             onChildAdded(roomRef, (data) => {
-                renderMessage(data.val());
+                const msg = data.val();
+                renderMessage(msg);
+                
+                // Si el mensaje no es mío y ya pasó la carga inicial, ¡SUENA!
+                if (!firstLoad && msg.user !== userName) {
+                    const audio = new Audio(selectedSound);
+                    audio.play().catch(() => console.log("Toca la pantalla para activar sonido"));
+                }
             });
+            setTimeout(() => { firstLoad = false; }, 2000);
         };
 
-        // 3. FUNCIÓN PARA DIBUJAR LOS MENSAJES
         function renderMessage(msg) {
             const box = document.getElementById('chat-box');
             const isMe = msg.user === userName;
             const div = document.createElement('div');
             div.className = `flex ${isMe ? 'flex-row-reverse' : 'flex-row'} items-end gap-2 mb-4 animate-pop`;
             
-            let content = msg.type === 'image' ? `<img src="${msg.content}" class="rounded-lg">` :
+            let content = msg.type === 'image' ? `<img src="${msg.content}" class="rounded-xl shadow-lg">` :
                           msg.type === 'audio' ? `<audio controls src="${msg.content}" class="w-44 h-8"></audio>` :
                           `<p class="text-sm">${msg.content}</p>`;
 
             div.innerHTML = `
-                <img src="${msg.pic}" onclick="openProfile('${msg.user}', '${msg.pic}')" class="w-9 h-9 rounded-full object-cover border border-cyan-500 cursor-pointer">
-                <div class="max-w-[75%] p-3 rounded-2xl ${isMe ? 'bg-cyan-600/40' : 'bg-zinc-800'} border border-white/5">
+                <img src="${msg.pic}" onclick="openProfile('${msg.user}', '${msg.pic}')" class="w-9 h-9 rounded-full object-cover border border-cyan-500 cursor-pointer shadow-md">
+                <div class="max-w-[75%] p-3 rounded-2xl ${isMe ? 'bg-cyan-600/30' : 'bg-zinc-800'} border border-white/5 shadow-xl">
                     ${content}
                 </div>`;
             box.appendChild(div);
             box.scrollTop = box.scrollHeight;
         }
 
-        // ENVIAR MENSAJE A LA SALA DONDE ESTÉS
         window.sendMessage = (type, content) => {
             if (content) {
-                const roomRef = ref(db, 'messages/' + currentRoom);
-                push(roomRef, { user: userName, pic: userPic, type: type, content: content, timestamp: serverTimestamp() });
+                push(ref(db, 'messages/' + currentRoom), {
+                    user: userName, pic: userPic, type: type, content: content, timestamp: serverTimestamp()
+                });
                 document.getElementById('user-input').value = "";
             }
         };
 
-        // MULTIMEDIA
         window.uploadImg = (e) => {
             const r = new FileReader(); r.onloadend = () => window.sendMessage('image', r.result);
             if(e.target.files[0]) r.readAsDataURL(e.target.files[0]);
         };
 
-        // ABRIR PERFIL Y ACTIVAR BOTÓN PRIVADO
         window.openProfile = (name, pic) => {
             document.getElementById('p-img').src = pic;
             document.getElementById('p-name').innerText = name;
             document.getElementById('profile-modal').style.display = 'flex';
-            
-            // EL BOTÓN MÁGICO
             document.getElementById('private-btn').onclick = () => {
                 const privateID = [userName, name].sort().join("_");
                 document.getElementById('room-title').innerText = "Privado: " + name;
                 document.getElementById('profile-modal').style.display = 'none';
-                window.loadMessages(privateID); // Cambia a la sala privada
+                window.loadMessages(privateID);
             };
         };
 
-        // EMPEZAR EN LA SALA GLOBAL
         window.loadMessages("global");
     </script>
     <style>
         body { background: #000; color: white; font-family: sans-serif; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; margin: 0; }
         .animate-pop { animation: pop 0.3s ease-out; }
         @keyframes pop { from { opacity:0; transform:scale(0.9); } to { opacity:1; transform:scale(1); } }
+        #sound-menu { z-index: 10000 !important; }
     </style>
 </head>
 <body>
 
-    <div id="profile-modal" style="display:none" class="fixed inset-0 bg-black/95 z-[100] items-center justify-center p-6">
-        <div class="bg-zinc-900 w-full max-w-xs rounded-3xl border border-white/10 p-6 text-center">
+    <div id="profile-modal" style="display:none" class="fixed inset-0 bg-black/95 z-[10001] items-center justify-center p-6 text-center">
+        <div class="bg-zinc-900 w-full max-w-xs rounded-3xl border border-white/10 p-6">
             <img id="p-img" class="w-24 h-24 rounded-full border-4 border-cyan-500 object-cover mx-auto mb-4">
             <h2 id="p-name" class="text-xl font-bold mb-6"></h2>
             <div class="flex gap-2">
-                <button id="private-btn" class="flex-1 bg-white text-black font-bold py-3 rounded-xl">Mensaje Privado</button>
+                <button id="private-btn" class="flex-1 bg-white text-black font-bold py-3 rounded-xl">Chat Privado</button>
                 <button onclick="document.getElementById('profile-modal').style.display='none'" class="bg-zinc-800 px-4 rounded-xl">✕</button>
             </div>
         </div>
     </div>
 
-    <header class="p-4 border-b border-white/10 bg-zinc-950 flex justify-between items-center">
+    <header class="p-4 bg-zinc-950 border-b border-white/10 flex justify-between items-center relative z-50">
         <div>
-            <h1 class="text-cyan-400 font-bold text-xs uppercase">Sekai Chat</h1>
+            <h1 class="text-[10px] text-cyan-400 font-bold uppercase tracking-widest leading-none">Sekai System</h1>
             <p id="room-title" class="text-lg font-bold">Sala Global</p>
         </div>
-        <button onclick="location.reload()" class="bg-white/5 px-4 py-1 rounded-full text-[10px] border border-white/10">SALIR</button>
+        <div class="flex gap-2 relative">
+            <button onclick="document.getElementById('sound-menu').classList.toggle('hidden')" class="w-10 h-10 bg-zinc-800 rounded-full flex items-center justify-center border border-white/20">🔊</button>
+            
+            <div id="sound-menu" class="hidden absolute right-0 mt-12 w-40 bg-zinc-900 border border-cyan-500 rounded-xl overflow-hidden shadow-2xl">
+                <button onclick="changeSound('Tuturu')" class="w-full p-3 text-left text-xs border-b border-white/5">🌸 Tuturu</button>
+                <button onclick="changeSound('Nani?!')" class="w-full p-3 text-left text-xs border-b border-white/5">💢 Nani?!</button>
+                <button onclick="changeSound('Goku')" class="w-full p-3 text-left text-xs border-b border-white/5">🔥 Goku</button>
+                <button onclick="changeSound('SAO')" class="w-full p-3 text-left text-xs border-b border-white/5">⚔️ SAO</button>
+                <button onclick="changeSound('Yamete')" class="w-full p-3 text-left text-xs">😏 Yamete</button>
+            </div>
+        </div>
     </header>
 
-    <main id="chat-box" class="flex-1 overflow-y-auto p-4 space-y-2"></main>
+    <main id="chat-box" class="flex-1 overflow-y-auto p-4 space-y-4"></main>
 
     <footer class="p-4 bg-zinc-900 border-t border-white/10">
         <div class="flex gap-2 items-center max-w-screen-md mx-auto">
