@@ -1,17 +1,113 @@
-<div class="sekai-container">
-  <div class="sidebar">
-    <div class="icon">🌎</div>
-    <div class="icon active">🎌</div>
-  </div>
-  
-  <div class="chat-window">
-    <div class="header"># SALA GLOBAL</div>
-    <div class="messages">
-      <div class="msg">Bienvenido al Sekai Hub...</div>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sekai Chat Style</title>
+    <style>
+        /* FONDO Y ESTILO GENERAL */
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* Aquí puedes cambiar el fondo por tu imagen favorita */
+            background: url('https://wallpaperaccess.com/full/1321034.jpg') no-repeat center center fixed;
+            background-size: cover;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* EL CONTENEDOR EFECTO CRISTAL (GLASSMORPHISM) */
+        .sekai-app {
+            width: 90%;
+            max-width: 400px; /* Tamaño móvil como en tu imagen */
+            height: 80vh;
+            background: rgba(0, 0, 0, 0.6); /* Fondo oscuro translúcido */
+            backdrop-filter: blur(15px); /* El efecto de desenfoque */
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+        }
+
+        /* BARRA SUPERIOR */
+        .header {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            text-align: center;
+            color: #fff;
+            font-weight: bold;
+            letter-spacing: 2px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* ÁREA DE MENSAJES */
+        .chat-box {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            color: #eee;
+        }
+
+        .message {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 12px 18px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            max-width: 80%;
+            font-size: 14px;
+            border-bottom-left-radius: 2px;
+        }
+
+        /* BARRA DE ENTRADA */
+        .input-area {
+            padding: 20px;
+            display: flex;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        input {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            padding: 12px;
+            border-radius: 20px;
+            color: white;
+            outline: none;
+        }
+
+        button {
+            background: #ff007f; /* Color Rosa Neón Otaku */
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="sekai-app">
+    <div class="header"># SALA GLOBAL 🎌</div>
+    
+    <div class="chat-box">
+        <div class="message">Bienvenido al Sekai Hub...</div>
+        <div class="message">Configuración de interfaz completada. ✅</div>
     </div>
+
     <div class="input-area">
-      <input type="text" placeholder="Escribe un mensaje...">
-      <button>➤</button>
+        <input type="text" placeholder="Escribe un mensaje...">
+        <button>➤</button>
     </div>
-  </div>
 </div>
+
+</body>
+</html>
