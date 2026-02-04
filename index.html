@@ -107,4 +107,77 @@
             if(e.target.files[0]) r.readAsDataURL(e.target.files[0]);
         };
 
-        window.loadMessages
+        window.loadMessages("global");
+    </script>
+    <style>
+        body { background: #050505; color: #e2e8f0; font-family: 'Rajdhani', sans-serif; height: 100dvh; display: flex; overflow: hidden; margin: 0; }
+        .font-orbitron { font-family: 'Orbitron', sans-serif; }
+        .animate-pop { animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes pop { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #22d3ee; border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+    <nav class="w-16 md:w-64 bg-zinc-950 border-r border-white/5 flex flex-col items-center py-6 gap-6">
+        <div class="w-12 h-12 bg-cyan-500 rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(34,211,238,0.5)]">
+            <span class="font-orbitron font-bold text-black text-xl">S</span>
+        </div>
+        <div class="flex-1 w-full px-3 space-y-4 text-center">
+            <button onclick="loadMessages('global', 'Sala Global')" class="w-full py-3 rounded-xl hover:bg-white/5 transition border border-transparent hover:border-cyan-500/30 group">
+                <span class="hidden md:inline font-bold text-xs tracking-widest group-hover:text-cyan-400"># GLOBAL</span>
+                <span class="md:hidden">🌎</span>
+            </button>
+            <button onclick="loadMessages('anime', 'Sala Anime')" class="w-full py-3 rounded-xl hover:bg-white/5 transition border border-transparent hover:border-pink-500/30 group">
+                <span class="hidden md:inline font-bold text-xs tracking-widest group-hover:text-pink-400"># ANIME</span>
+                <span class="md:hidden">🎌</span>
+            </button>
+        </div>
+        <img src="https://i.imgur.com/6VBx3io.png" class="w-10 h-10 rounded-full border border-white/20">
+    </nav>
+
+    <div class="flex-1 flex flex-col relative">
+        <header class="h-20 flex items-center justify-between px-8 bg-zinc-950/50 backdrop-blur-md border-b border-white/5">
+            <div>
+                <h1 id="room-title" class="text-2xl font-orbitron font-bold tracking-tighter text-white">Sala Global</h1>
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                    <span class="text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Servidor Activo</span>
+                </div>
+            </div>
+            <button onclick="location.reload()" class="bg-white/5 p-2 rounded-lg border border-white/10 hover:bg-red-500/20 hover:border-red-500 transition">✕</button>
+        </header>
+
+        <main id="chat-box" class="flex-1 overflow-y-auto p-6 space-y-2 bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')]"></main>
+
+        <footer class="p-6 bg-zinc-950">
+            <div class="max-w-4xl mx-auto flex gap-4 items-center bg-zinc-900/50 p-2 rounded-2xl border border-white/5 shadow-2xl">
+                <label class="w-12 h-12 flex items-center justify-center cursor-pointer hover:bg-white/5 rounded-xl transition">
+                    <span class="text-xl">🖼️</span>
+                    <input type="file" accept="image/*" class="hidden" onchange="window.uploadImg(event)">
+                </label>
+                <input type="text" id="user-input" onkeypress="if(event.key==='Enter') window.sendMessage('text', this.value)" placeholder="Escribe un mensaje en la red..." class="flex-1 bg-transparent outline-none text-sm font-medium">
+                <button onclick="window.sendMessage('text', document.getElementById('user-input').value)" class="w-12 h-12 bg-cyan-500 hover:bg-cyan-400 text-black rounded-xl flex items-center justify-center transition shadow-lg shadow-cyan-500/20">➤</button>
+            </div>
+        </footer>
+    </div>
+
+    <div id="profile-modal" style="display:none" class="fixed inset-0 bg-black/90 z-[100] items-center justify-center p-6 backdrop-blur-sm">
+        <div class="bg-zinc-900 border border-white/10 w-full max-w-xs rounded-[2rem] p-8 text-center shadow-2xl animate-pop">
+            <div class="relative inline-block mb-4">
+                <img id="p-img" class="w-32 h-32 rounded-full border-4 border-cyan-500 object-cover mx-auto">
+                <div class="absolute bottom-0 right-0 bg-green-500 w-6 h-6 border-4 border-zinc-900 rounded-full"></div>
+            </div>
+            <h2 id="p-name" class="text-2xl font-orbitron font-bold text-white mb-1"></h2>
+            <div class="mb-6"><span id="p-rank"></span></div>
+            <div class="flex gap-3">
+                <button id="private-btn" class="flex-1 bg-cyan-500 text-black font-bold py-4 rounded-2xl shadow-lg shadow-cyan-500/20 hover:scale-105 transition">Chat Privado</button>
+                <button onclick="document.getElementById('profile-modal').style.display='none'" class="bg-zinc-800 px-6 rounded-2xl">✕</button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
