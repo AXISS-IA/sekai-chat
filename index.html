@@ -102,6 +102,44 @@
     </style>
 </head>
 <body>
+    <body class="text-white">
+
+    <div id="profile-modal" style="display:none" class="fixed inset-0 bg-black/95 z-[10001] items-center justify-center p-6 text-center">
+        <div class="bg-zinc-900 w-full max-w-xs rounded-3xl overflow-hidden border border-white/10 p-6 shadow-2xl">
+            <img id="p-img" class="w-24 h-24 rounded-full border-4 border-cyan-500 object-cover mx-auto mb-4">
+            <h2 id="p-name" class="text-xl font-bold mb-6 text-white tracking-tight"></h2>
+            <div class="flex gap-2">
+                <button id="private-btn" class="flex-1 bg-white text-black font-bold py-3 rounded-xl active:scale-95 transition">Chat Privado</button>
+                <button onclick="document.getElementById('profile-modal').style.display='none'" class="bg-zinc-800 px-4 rounded-xl text-white border border-white/10">✕</button>
+            </div>
+        </div>
+    </div>
+
+    <header class="p-4 border-b border-white/10 bg-zinc-950 flex justify-between items-center">
+        <div>
+            <h1 class="text-cyan-400 font-bold tracking-tighter text-xs uppercase">Sekai Hub</h1>
+            <p id="room-title" class="text-lg font-bold">Sala Global</p>
+        </div>
+        <button onclick="location.reload()" class="bg-white/5 px-4 py-1 rounded-full text-[10px] border border-white/10">SALIR</button>
+    </header>
+
+    ```
+
+### 🎌 Lo que falta para que "despierte":
+Para que esa ventana que acabas de pegar responda cuando tocas una foto, asegúrate de que en tu parte de **JavaScript** (dentro de las etiquetas `<script>`) tengas esta función:
+
+```javascript
+window.openProfile = (name, pic) => {
+    document.getElementById('p-img').src = pic;
+    document.getElementById('p-name').innerText = name;
+    document.getElementById('profile-modal').style.display = 'flex';
+    
+    document.getElementById('private-btn').onclick = () => {
+        // Lógica para cambiar de sala (la completaremos en el Paso 3)
+        alert("Cambiando a chat privado con: " + name);
+        document.getElementById('profile-modal').style.display = 'none';
+    };
+};
     <header class="p-4 border-b border-white/10 bg-zinc-950">
         <h1 class="text-cyan-400 font-bold tracking-tighter">SEKAI STEP 1: MULTIMEDIA</h1>
     </header>
