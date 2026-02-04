@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sekai Ultimate v6</title>
+    <title>Sekai Hub - Otaku Dream Style</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, push, onChildAdded, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
@@ -23,76 +24,82 @@
         const db = getDatabase(app);
 
         let currentRoom = "global";
-        let userName = localStorage.getItem('sekai_user') || prompt("Tu nombre:") || "Pilot";
+        let userName = localStorage.getItem('sekai_user') || prompt("Tu nombre de Usuario:") || "Viajero";
         let userPic = localStorage.getItem('sekai_pic') || "https://i.imgur.com/6VBx3io.png";
         let selectedSound = localStorage.getItem('sekai_sound') || "https://www.myinstants.com/media/sounds/tuturu_1.mp3";
+        let msgCount = parseInt(localStorage.getItem('sekai_msgs')) || 0;
 
         localStorage.setItem('sekai_user', userName);
 
-        // --- BIBLIOTECA DE SONIDOS ---
-        const animeSounds = {
-            "Tuturu": "https://www.myinstants.com/media/sounds/tuturu_1.mp3",
-            "Nani?!": "https://www.myinstants.com/media/sounds/nani_n89PrS9.mp3",
-            "Goku": "https://www.myinstants.com/media/sounds/goku-screaming-meme.mp3",
-            "SAO": "https://www.myinstants.com/media/sounds/sao-message-notification.mp3",
-            "Yamete": "https://www.myinstants.com/media/sounds/yamete_kudasai.mp3"
+        const getRank = (count) => {
+            if(count > 200) return { name: "HOKAGE", color: "text-cyan-400 border-cyan-400" };
+            if(count > 100) return { name: "JONIN", color: "text-yellow-400 border-yellow-400" };
+            if(count > 30) return { name: "CHUNIN", color: "text-gray-300 border-gray-300" };
+            return { name: "GENIN", color: "text-orange-500 border-orange-500" };
         };
 
-        window.changeSound = (name) => {
-            selectedSound = animeSounds[name];
-            localStorage.setItem('sekai_sound', selectedSound);
-            new Audio(selectedSound).play();
-            document.getElementById('sound-menu').classList.add('hidden');
-        };
-
-        // --- CARGAR SALA Y NOTIFICAR ---
-        window.loadMessages = (roomID) => {
+        window.loadMessages = (roomID, roomName = "Sala Global") => {
             currentRoom = roomID;
+            document.getElementById('room-title').innerText = roomName;
             const box = document.getElementById('chat-box');
             box.innerHTML = "";
             
             const roomRef = ref(db, 'messages/' + roomID);
-            let firstLoad = true;
-
             onChildAdded(roomRef, (data) => {
-                const msg = data.val();
-                renderMessage(msg);
-                
-                // Si el mensaje no es mío y ya pasó la carga inicial, ¡SUENA!
-                if (!firstLoad && msg.user !== userName) {
-                    const audio = new Audio(selectedSound);
-                    audio.play().catch(() => console.log("Toca la pantalla para activar sonido"));
-                }
+                renderMessage(data.val());
+                if (data.val().user !== userName) new Audio(selectedSound).play().catch(()=>{});
             });
-            setTimeout(() => { firstLoad = false; }, 2000);
         };
 
         function renderMessage(msg) {
             const box = document.getElementById('chat-box');
             const isMe = msg.user === userName;
+            const rank = getRank(msg.count || 0);
             const div = document.createElement('div');
-            div.className = `flex ${isMe ? 'flex-row-reverse' : 'flex-row'} items-end gap-2 mb-4 animate-pop`;
+            div.className = `flex ${isMe ? 'flex-row-reverse' : 'flex-row'} items-end gap-3 mb-6 animate-pop`;
             
-            let content = msg.type === 'image' ? `<img src="${msg.content}" class="rounded-xl shadow-lg">` :
-                          msg.type === 'audio' ? `<audio controls src="${msg.content}" class="w-44 h-8"></audio>` :
-                          `<p class="text-sm">${msg.content}</p>`;
+            let content = msg.type === 'image' ? `<img src="${msg.content}" class="rounded-xl border border-white/10 max-w-full">` :
+                          `<p class="text-[15px] leading-relaxed">${msg.content}</p>`;
 
             div.innerHTML = `
-                <img src="${msg.pic}" onclick="openProfile('${msg.user}', '${msg.pic}')" class="w-9 h-9 rounded-full object-cover border border-cyan-500 cursor-pointer shadow-md">
-                <div class="max-w-[75%] p-3 rounded-2xl ${isMe ? 'bg-cyan-600/30' : 'bg-zinc-800'} border border-white/5 shadow-xl">
-                    ${content}
+                <div class="flex flex-col items-center">
+                    <img src="${msg.pic}" onclick="openProfile('${msg.user}', '${msg.pic}', ${msg.count || 0})" class="w-12 h-12 rounded-full object-cover border-2 border-cyan-500/50 shadow-[0_0_10px_rgba(34,211,238,0.3)] cursor-pointer">
+                    <span class="text-[8px] font-bold mt-1 px-1 border rounded ${rank.color}">${rank.name}</span>
+                </div>
+                <div class="max-w-[70%]">
+                    <div class="flex items-center gap-2 mb-1 ${isMe ? 'justify-end' : ''}">
+                        <span class="text-[11px] font-bold text-cyan-400 uppercase tracking-tighter">${msg.user}</span>
+                    </div>
+                    <div class="p-4 rounded-2xl ${isMe ? 'bg-cyan-900/40 rounded-tr-none' : 'bg-zinc-900/80 rounded-tl-none'} border border-white/5 backdrop-blur-md shadow-2xl">
+                        ${content}
+                    </div>
                 </div>`;
             box.appendChild(div);
             box.scrollTop = box.scrollHeight;
         }
 
         window.sendMessage = (type, content) => {
-            if (content) {
-                push(ref(db, 'messages/' + currentRoom), {
-                    user: userName, pic: userPic, type: type, content: content, timestamp: serverTimestamp()
-                });
-                document.getElementById('user-input').value = "";
-            }
+            if (!content) return;
+            msgCount++;
+            localStorage.setItem('sekai_msgs', msgCount);
+            push(ref(db, 'messages/' + currentRoom), {
+                user: userName, pic: userPic, type: type, content: content, count: msgCount, timestamp: serverTimestamp()
+            });
+            document.getElementById('user-input').value = "";
+        };
+
+        window.openProfile = (name, pic, count) => {
+            const rank = getRank(count);
+            document.getElementById('p-img').src = pic;
+            document.getElementById('p-name').innerText = name;
+            document.getElementById('p-rank').innerText = rank.name;
+            document.getElementById('p-rank').className = `text-sm font-bold px-3 py-1 border rounded-full ${rank.color}`;
+            document.getElementById('profile-modal').style.display = 'flex';
+            document.getElementById('private-btn').onclick = () => {
+                const privateID = [userName, name].sort().join("_");
+                document.getElementById('profile-modal').style.display = 'none';
+                window.loadMessages(privateID, "Privado: " + name);
+            };
         };
 
         window.uploadImg = (e) => {
@@ -100,69 +107,4 @@
             if(e.target.files[0]) r.readAsDataURL(e.target.files[0]);
         };
 
-        window.openProfile = (name, pic) => {
-            document.getElementById('p-img').src = pic;
-            document.getElementById('p-name').innerText = name;
-            document.getElementById('profile-modal').style.display = 'flex';
-            document.getElementById('private-btn').onclick = () => {
-                const privateID = [userName, name].sort().join("_");
-                document.getElementById('room-title').innerText = "Privado: " + name;
-                document.getElementById('profile-modal').style.display = 'none';
-                window.loadMessages(privateID);
-            };
-        };
-
-        window.loadMessages("global");
-    </script>
-    <style>
-        body { background: #000; color: white; font-family: sans-serif; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; margin: 0; }
-        .animate-pop { animation: pop 0.3s ease-out; }
-        @keyframes pop { from { opacity:0; transform:scale(0.9); } to { opacity:1; transform:scale(1); } }
-        #sound-menu { z-index: 10000 !important; }
-    </style>
-</head>
-<body>
-
-    <div id="profile-modal" style="display:none" class="fixed inset-0 bg-black/95 z-[10001] items-center justify-center p-6 text-center">
-        <div class="bg-zinc-900 w-full max-w-xs rounded-3xl border border-white/10 p-6">
-            <img id="p-img" class="w-24 h-24 rounded-full border-4 border-cyan-500 object-cover mx-auto mb-4">
-            <h2 id="p-name" class="text-xl font-bold mb-6"></h2>
-            <div class="flex gap-2">
-                <button id="private-btn" class="flex-1 bg-white text-black font-bold py-3 rounded-xl">Chat Privado</button>
-                <button onclick="document.getElementById('profile-modal').style.display='none'" class="bg-zinc-800 px-4 rounded-xl">✕</button>
-            </div>
-        </div>
-    </div>
-
-    <header class="p-4 bg-zinc-950 border-b border-white/10 flex justify-between items-center relative z-50">
-        <div>
-            <h1 class="text-[10px] text-cyan-400 font-bold uppercase tracking-widest leading-none">Sekai System</h1>
-            <p id="room-title" class="text-lg font-bold">Sala Global</p>
-        </div>
-        <div class="flex gap-2 relative">
-            <button onclick="document.getElementById('sound-menu').classList.toggle('hidden')" class="w-10 h-10 bg-zinc-800 rounded-full flex items-center justify-center border border-white/20">🔊</button>
-            
-            <div id="sound-menu" class="hidden absolute right-0 mt-12 w-40 bg-zinc-900 border border-cyan-500 rounded-xl overflow-hidden shadow-2xl">
-                <button onclick="changeSound('Tuturu')" class="w-full p-3 text-left text-xs border-b border-white/5">🌸 Tuturu</button>
-                <button onclick="changeSound('Nani?!')" class="w-full p-3 text-left text-xs border-b border-white/5">💢 Nani?!</button>
-                <button onclick="changeSound('Goku')" class="w-full p-3 text-left text-xs border-b border-white/5">🔥 Goku</button>
-                <button onclick="changeSound('SAO')" class="w-full p-3 text-left text-xs border-b border-white/5">⚔️ SAO</button>
-                <button onclick="changeSound('Yamete')" class="w-full p-3 text-left text-xs">😏 Yamete</button>
-            </div>
-        </div>
-    </header>
-
-    <main id="chat-box" class="flex-1 overflow-y-auto p-4 space-y-4"></main>
-
-    <footer class="p-4 bg-zinc-900 border-t border-white/10">
-        <div class="flex gap-2 items-center max-w-screen-md mx-auto">
-            <label class="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center text-xl border border-white/10 cursor-pointer">
-                🖼️<input type="file" accept="image/*" class="hidden" onchange="window.uploadImg(event)">
-            </label>
-            <input type="text" id="user-input" onkeypress="if(event.key==='Enter') window.sendMessage('text', this.value)" placeholder="Escribe..." class="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-sm outline-none">
-            <button onclick="window.sendMessage('text', document.getElementById('user-input').value)" class="w-12 h-12 bg-cyan-500 rounded-full flex items-center justify-center text-black font-bold">➤</button>
-        </div>
-    </footer>
-
-</body>
-</html>
+        window.loadMessages
