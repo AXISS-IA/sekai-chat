@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sekai Profile Chat</title>
+    <title>Sekai Chat Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -23,13 +23,12 @@
         const db = getDatabase(app);
         const messagesRef = ref(db, 'messages');
 
-        // GESTIÓN DE PERFIL
         let userName = localStorage.getItem('sekai_user');
         let userPic = localStorage.getItem('sekai_pic');
 
         if (!userName) {
-            userName = prompt("Tu nombre de piloto:") || "Invitado";
-            userPic = prompt("Pega el LINK de tu foto de perfil (o deja vacío):") || "https://i.imgur.com/6VBx3io.png";
+            userName = prompt("Nombre de usuario:") || "User" + Math.floor(Math.random()*99);
+            userPic = prompt("Link de foto de perfil (JPG/PNG):") || "https://i.imgur.com/6VBx3io.png";
             localStorage.setItem('sekai_user', userName);
             localStorage.setItem('sekai_pic', userPic);
         }
@@ -38,7 +37,7 @@
         document.getElementById('header-pic').src = userPic;
 
         window.sendMessage = function(type = 'text', content = document.getElementById('user-input').value) {
-            if (content || type === 'image') {
+            if (content.trim() !== "" || type === 'image') {
                 push(messagesRef, {
                     user: userName,
                     pic: userPic,
@@ -47,7 +46,6 @@
                     timestamp: serverTimestamp() 
                 });
                 document.getElementById('user-input').value = "";
-                document.getElementById('emoji-picker').classList.add('hidden');
             }
         };
 
@@ -64,70 +62,69 @@
             const div = document.createElement('div');
             const isMe = msg.user === userName;
 
-            let contentHTML = msg.type === 'image' ? 
-                `<img src="${msg.content}" class="max-w-full rounded-lg border border-cyan-400 shadow-lg">` : 
-                `<p class="${msg.type === 'emoji' ? 'text-4xl' : 'text-white'}">${msg.content}</p>`;
+            // Formatear hora
+            const date = msg.timestamp ? new Date(msg.timestamp) : new Date();
+            const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-            div.className = `flex ${isMe ? 'flex-row-reverse' : 'flex-row'} items-end gap-2 mb-6 animate-fade-in`;
+            let contentHTML = msg.type === 'image' ? 
+                `<img src="${msg.content}" class="max-w-full rounded-lg border border-cyan-400">` : 
+                `<p class="text-white text-sm md:text-base">${msg.content}</p>`;
+
+            div.className = `flex ${isMe ? 'flex-row-reverse' : 'flex-row'} items-end gap-2 mb-4 animate-slide`;
             div.innerHTML = `
-                <img src="${msg.pic || 'https://i.imgur.com/6VBx3io.png'}" class="w-10 h-10 rounded-full border-2 border-cyan-500 object-cover shadow-[0_0_10px_rgba(34,211,238,0.5)]">
-                <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[75%]">
-                    <span class="text-[9px] font-bold text-cyan-300 uppercase px-1">${msg.user}</span>
-                    <div class="${isMe ? 'bg-cyan-600/30 border-cyan-400' : 'bg-purple-600/30 border-purple-400'} border p-3 rounded-2xl ${isMe ? 'rounded-br-none' : 'rounded-bl-none'} backdrop-blur-md">
+                <img src="${msg.pic}" class="w-8 h-8 rounded-full border border-cyan-500 object-cover shadow-md">
+                <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[80%]">
+                    <span class="text-[8px] text-cyan-400 font-bold ml-1 uppercase">${msg.user}</span>
+                    <div class="${isMe ? 'bg-cyan-900/60 border-cyan-500' : 'bg-purple-900/60 border-purple-500'} border p-3 rounded-2xl ${isMe ? 'rounded-br-none' : 'rounded-bl-none'} backdrop-blur-sm shadow-xl">
                         ${contentHTML}
+                        <div class="flex items-center gap-1 justify-end mt-1">
+                            <span class="text-[9px] text-gray-400">${timeStr}</span>
+                            ${isMe ? '<span class="text-cyan-400 text-[10px]">✓✓</span>' : ''}
+                        </div>
                     </div>
                 </div>
             `;
             box.appendChild(div);
             box.scrollTop = box.scrollHeight;
         });
-
-        const emojis = ['🔥','✨','🌸','🤖','🌌','👾','⛩️','🍡','🦊','🎮'];
-        emojis.forEach(e => {
-            const btn = document.createElement('button');
-            btn.innerText = e;
-            btn.className = "text-2xl hover:scale-125 transition";
-            btn.onclick = () => window.sendMessage('emoji', e);
-            document.getElementById('emoji-picker').appendChild(btn);
-        });
     </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
-        body { background: #000; font-family: 'Orbitron', sans-serif; height: 100dvh; overflow: hidden; display: flex; flex-direction: column; }
-        #bg-video { position: fixed; top:0; left:0; width:100%; height:100%; object-fit: cover; opacity: 0.3; z-index: -1; }
-        .animate-fade-in { animation: fadeIn 0.4s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        body { background: #050505; font-family: 'Orbitron', sans-serif; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+        .bg-gif { position: fixed; top:0; left:0; width:100%; height:100%; object-fit: cover; opacity: 0.2; z-index: -1; }
+        .animate-slide { animation: slide 0.3s ease-out; }
+        @keyframes slide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        ::-webkit-scrollbar { width: 3px; }
+        ::-webkit-scrollbar-thumb { background: #22d3ee; }
     </style>
 </head>
-<body class="text-cyan-400">
-    <img id="bg-video" src="https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHJueGZ3bm56bmZ3bmZ3bmZ3bmZ3bmZ3bmZ3bmZ3bmZ3bmZ3JmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZChars/3o7TKVUn7iM8FMEU24/giphy.gif">
+<body class="text-white">
+    <img class="bg-gif" src="https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHJueGZ3bm56bmZ3bmZ3bmZ3bmZ3bmZ3bmZ3bmZ3bmZ3bmZ3JmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZChars/3o7TKVUn7iM8FMEU24/giphy.gif">
 
-    <header class="p-4 border-b border-cyan-500 bg-black/80 flex justify-between items-center backdrop-blur-md">
+    <header class="p-3 border-b border-cyan-500/50 bg-black/80 backdrop-blur-md flex justify-between items-center shadow-lg">
         <div class="flex items-center gap-3">
-            <img id="header-pic" class="w-12 h-12 rounded-full border-2 border-purple-500 object-cover shadow-lg">
+            <img id="header-pic" class="w-10 h-10 rounded-full border-2 border-cyan-500 object-cover">
             <div>
-                <h1 class="text-lg font-black tracking-tighter text-cyan-400">SEKAI CHAT</h1>
-                <p id="header-user" class="text-[10px] text-purple-400 font-bold italic uppercase"></p>
+                <h1 class="text-sm font-bold tracking-widest text-cyan-400">SEKAI HUB</h1>
+                <p id="header-user" class="text-[9px] text-purple-400 uppercase italic"></p>
             </div>
         </div>
-        <div class="flex gap-2 items-center">
-            <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_10px_#22c55e]"></div>
-            <span class="text-[9px] font-bold">ONLINE</span>
+        <div class="text-right">
+            <div class="text-[8px] text-cyan-500 font-bold">SYTEM ONLINE</div>
+            <div class="w-full h-1 bg-cyan-900 rounded-full overflow-hidden"><div class="w-2/3 h-full bg-cyan-400 animate-pulse"></div></div>
         </div>
     </header>
 
-    <main id="chat-box" class="flex-1 overflow-y-auto p-4 space-y-2"></main>
+    <main id="chat-box" class="flex-1 overflow-y-auto p-4 space-y-2 bg-gradient-to-b from-transparent to-cyan-900/10"></main>
 
-    <footer class="p-4 bg-black/90 border-t border-cyan-900">
-        <div id="emoji-picker" class="hidden grid grid-cols-5 gap-4 p-4 mb-2 bg-gray-900 border border-cyan-500 rounded-xl"></div>
-        <div class="flex gap-3 items-center">
-            <label class="cursor-pointer">
-                <span class="text-2xl">📸</span>
+    <footer class="p-4 bg-black/90 border-t border-cyan-500/30">
+        <div class="flex gap-3 items-center max-w-4xl mx-auto">
+            <label class="hover:scale-110 transition active:scale-95 cursor-pointer">
+                <span class="text-xl">🖼️</span>
                 <input type="file" accept="image/*" class="hidden" onchange="window.uploadImage(event)">
             </label>
-            <button onclick="document.getElementById('emoji-picker').classList.toggle('hidden')" class="text-2xl">😊</button>
-            <input type="text" id="user-input" placeholder="Mensaje..." class="flex-1 bg-transparent border-b border-cyan-500 py-2 text-white outline-none">
-            <button onclick="window.sendMessage()" class="text-cyan-400 font-bold px-4">➤</button>
+            <input type="text" id="user-input" onkeypress="if(event.key==='Enter') window.sendMessage()" placeholder="Transmitiendo..." class="flex-1 bg-cyan-950/20 border-b border-cyan-500/50 py-2 text-sm outline-none focus:border-cyan-400 transition-all">
+            <button onclick="window.sendMessage()" class="text-cyan-400 text-xl hover:rotate-12 transition">➤</button>
         </div>
     </footer>
 </body>
