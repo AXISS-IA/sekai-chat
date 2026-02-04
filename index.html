@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sekai Anime Sounds</title>
+    <title>Sekai Meme Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -27,14 +27,16 @@
         let userPic = localStorage.getItem('sekai_pic') || "https://i.imgur.com/6VBx3io.png";
         let selectedSound = localStorage.getItem('sekai_sound') || "https://www.myinstants.com/media/sounds/tuturu_1.mp3";
 
-        localStorage.setItem('sekai_user', userName);
-
-        // --- BANCO DE SONIDOS ANIME ---
+        // --- BANCO DE SONIDOS EXPANDIDO ---
         const animeSounds = {
             "Tuturu": "https://www.myinstants.com/media/sounds/tuturu_1.mp3",
             "Nani?!": "https://www.myinstants.com/media/sounds/nani_n89PrS9.mp3",
-            "SAO Menu": "https://www.myinstants.com/media/sounds/sao-message-notification.mp3",
-            "Wow!": "https://www.myinstants.com/media/sounds/anime-wow-sound-effect.mp3"
+            "Goku": "https://www.myinstants.com/media/sounds/goku-screaming-meme.mp3",
+            "Baka!": "https://www.myinstants.com/media/sounds/anime-baka.mp3",
+            "Yamete": "https://www.myinstants.com/media/sounds/yamete_kudasai.mp3",
+            "Shinra Tensei": "https://www.myinstants.com/media/sounds/shinra-tensei-sound-effect.mp3",
+            "Sad Flute": "https://www.myinstants.com/media/sounds/naruto-sad-flute.mp3",
+            "SAO Menu": "https://www.myinstants.com/media/sounds/sao-message-notification.mp3"
         };
 
         window.changeSound = (name) => {
@@ -42,23 +44,17 @@
             localStorage.setItem('sekai_sound', selectedSound);
             const audio = new Audio(selectedSound);
             audio.play();
-            document.getElementById('sound-list').classList.add('hidden');
+            document.getElementById('sound-menu').classList.add('hidden');
         };
 
-        // --- ENVIAR MENSAJES ---
-        window.sendMessage = function(type = 'text', content = document.getElementById('user-input').value) {
-            if (content || type === 'audio' || type === 'image') {
+        window.sendMessage = function() {
+            const input = document.getElementById('user-input');
+            if (input.value.trim() !== "") {
                 push(ref(db, 'messages/' + currentRoom), {
-                    user: userName, pic: userPic, type: type, content: content, timestamp: serverTimestamp() 
+                    user: userName, pic: userPic, type: 'text', content: input.value, timestamp: serverTimestamp() 
                 });
-                document.getElementById('user-input').value = "";
+                input.value = "";
             }
-        };
-
-        // --- NOTIFICACIÓN SONORA ---
-        const playNotify = () => {
-            const audio = new Audio(selectedSound);
-            audio.play().catch(e => console.log("Click en la pantalla para activar sonidos"));
         };
 
         const loadMessages = (roomID) => {
@@ -67,66 +63,66 @@
             let firstLoad = true;
             onChildAdded(ref(db, 'messages/' + roomID), (data) => {
                 const msg = data.val();
-                renderMessage(msg, data.key);
-                // Solo suena si no es mi mensaje y no es la carga inicial masiva
-                if (!firstLoad && msg.user !== userName) playNotify();
+                const div = document.createElement('div');
+                const isMe = msg.user === userName;
+                div.className = `flex ${isMe ? 'flex-row-reverse' : 'flex-row'} items-end gap-2 mb-4 animate-pop`;
+                div.innerHTML = `
+                    <img src="${msg.pic}" class="w-9 h-9 rounded-full border border-cyan-500 object-cover shadow-lg">
+                    <div class="${isMe ? 'bg-cyan-600/40 border-cyan-400' : 'bg-zinc-800 border-white/10'} p-3 rounded-2xl ${isMe ? 'rounded-br-none' : 'rounded-bl-none'} border shadow-xl max-w-[75%]">
+                        <p class="text-sm text-white">${msg.content}</p>
+                    </div>
+                `;
+                box.appendChild(div);
+                box.scrollTop = box.scrollHeight;
+                if (!firstLoad && msg.user !== userName) new Audio(selectedSound).play();
             });
             setTimeout(() => { firstLoad = false; }, 2000);
         };
-
-        function renderMessage(msg, id) {
-            const box = document.getElementById('chat-box');
-            const div = document.createElement('div');
-            const isMe = msg.user === userName;
-            div.className = `flex ${isMe ? 'flex-row-reverse' : 'flex-row'} items-end gap-2 mb-4 animate-pop`;
-            
-            let content = msg.type === 'audio' ? `<audio controls src="${msg.content}" class="w-40 h-8"></audio>` :
-                          msg.type === 'image' ? `<img src="${msg.content}" class="rounded-xl">` :
-                          `<p class="text-sm text-white">${msg.content}</p>`;
-
-            div.innerHTML = `
-                <img src="${msg.pic}" class="w-9 h-9 rounded-full border border-cyan-500 object-cover">
-                <div class="${isMe ? 'bg-cyan-600/30' : 'bg-zinc-800'} p-3 rounded-2xl ${isMe ? 'rounded-br-none' : 'rounded-bl-none'} border border-white/5">
-                    ${content}
-                </div>
-            `;
-            box.appendChild(div);
-            box.scrollTop = box.scrollHeight;
-        }
 
         loadMessages(currentRoom);
     </script>
     <style>
         body { background: #000; font-family: sans-serif; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
-        .animate-pop { animation: pop 0.3s ease-out; }
-        @keyframes pop { from { opacity:0; transform:scale(0.8); } to { opacity:1; transform:scale(1); } }
+        .animate-pop { animation: pop 0.25s ease-out; }
+        @keyframes pop { from { opacity:0; transform:scale(0.9); } to { opacity:1; transform:scale(1); } }
+        #sound-menu { z-index: 10000 !important; max-height: 350px; overflow-y: auto; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #22d3ee; border-radius: 10px; }
     </style>
 </head>
 <body class="text-white">
 
-    <header class="p-4 border-b border-white/10 flex justify-between items-center bg-zinc-950/50 backdrop-blur-md">
+    <header class="p-4 border-b border-white/10 flex justify-between items-center bg-black/80 backdrop-blur-md relative z-50">
         <div>
-            <h1 class="text-xs font-bold text-cyan-400 tracking-widest">SEKAI SOUNDS</h1>
-            <p class="text-lg font-bold">Sala Global</p>
+            <h1 class="text-[10px] font-bold text-cyan-400 tracking-widest uppercase italic">Sekai Meme System</h1>
+            <p class="text-lg font-bold">Sala Global 🏯</p>
         </div>
         
         <div class="relative">
-            <button onclick="document.getElementById('sound-list').classList.toggle('hidden')" class="p-2 bg-white/5 rounded-xl border border-white/10">🔔</button>
-            <div id="sound-list" class="hidden absolute right-0 mt-2 w-40 bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden">
-                <button onclick="changeSound('Tuturu')" class="w-full p-3 text-left text-xs hover:bg-cyan-500 hover:text-black border-b border-white/5">🌸 Tuturu!</button>
-                <button onclick="changeSound('Nani?!')" class="w-full p-3 text-left text-xs hover:bg-cyan-500 hover:text-black border-b border-white/5">💢 Nani?!</button>
-                <button onclick="changeSound('SAO Menu')" class="w-full p-3 text-left text-xs hover:bg-cyan-500 hover:text-black border-b border-white/5">⚔️ SAO Menu</button>
-                <button onclick="changeSound('Wow!')" class="w-full p-3 text-left text-xs hover:bg-cyan-500 hover:text-black">✨ Wow!</button>
+            <button onclick="document.getElementById('sound-menu').classList.toggle('hidden')" class="w-10 h-10 bg-zinc-800 rounded-full flex items-center justify-center border border-white/20 active:scale-90 transition shadow-lg">
+                🔊
+            </button>
+            
+            <div id="sound-menu" class="hidden absolute right-0 mt-3 w-56 bg-zinc-900 border-2 border-cyan-500 rounded-2xl shadow-[0_0_40px_rgba(34,211,238,0.4)]">
+                <div class="p-2 bg-cyan-500 text-black text-[10px] font-bold text-center uppercase">Sonidos de Notificación</div>
+                <button onclick="changeSound('Tuturu')" class="w-full p-3 text-left text-sm hover:bg-white/10 border-b border-white/5">🌸 Tuturu!</button>
+                <button onclick="changeSound('Nani?!')" class="w-full p-3 text-left text-sm hover:bg-white/10 border-b border-white/5">💢 Nani?!</button>
+                <button onclick="changeSound('Goku')" class="w-full p-3 text-left text-sm hover:bg-white/10 border-b border-white/5">🔥 Grito Goku</button>
+                <button onclick="changeSound('Yamete')" class="w-full p-3 text-left text-sm hover:bg-white/10 border-b border-white/5">😏 Yamete...</button>
+                <button onclick="changeSound('Baka!')" class="w-full p-3 text-left text-sm hover:bg-white/10 border-b border-white/5">👊 Baka!</button>
+                <button onclick="changeSound('Shinra Tensei')" class="w-full p-3 text-left text-sm hover:bg-white/10 border-b border-white/5">👁️ Shinra Tensei</button>
+                <button onclick="changeSound('Sad Flute')" class="w-full p-3 text-left text-sm hover:bg-white/10 border-b border-white/5">🍃 Sad Flute</button>
+                <button onclick="changeSound('SAO Menu')" class="w-full p-3 text-left text-sm hover:bg-white/10">⚔️ SAO Menu</button>
             </div>
         </div>
     </header>
 
     <main id="chat-box" class="flex-1 overflow-y-auto p-4 space-y-4"></main>
 
-    <footer class="p-4 bg-zinc-950/90 border-t border-white/5">
-        <div class="flex gap-2 items-center">
-            <input type="text" id="user-input" placeholder="Mensaje..." class="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-sm outline-none focus:border-cyan-500">
-            <button onclick="window.sendMessage()" class="w-12 h-12 bg-cyan-500 rounded-full flex items-center justify-center text-black font-bold">➤</button>
+    <footer class="p-4 bg-zinc-950/95 border-t border-white/5 z-50">
+        <div class="flex gap-2 items-center max-w-screen-md mx-auto">
+            <input type="text" id="user-input" onkeypress="if(event.key==='Enter') window.sendMessage()" placeholder="Enviar mensaje..." class="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-sm outline-none focus:border-cyan-500 transition-all">
+            <button onclick="window.sendMessage()" class="w-12 h-12 bg-cyan-500 rounded-full flex items-center justify-center text-black shadow-[0_0_15px_rgba(34,211,238,0.5)]">➤</button>
         </div>
     </footer>
 
