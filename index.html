@@ -2,112 +2,165 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sekai Chat Style</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="SekaiChat - El multiverso de chats en tiempo real">
+    <title>SekaiChat Supreme | GitHub Edition</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+
     <style>
-        /* FONDO Y ESTILO GENERAL */
-        body {
-            margin: 0;
-            padding: 0;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            /* Aquí puedes cambiar el fondo por tu imagen favorita */
-            background: url('https://wallpaperaccess.com/full/1321034.jpg') no-repeat center center fixed;
-            background-size: cover;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        :root { --p: #ff2e63; --s: #08d9d6; --bg: #0d1117; --card: #161b22; --border: #30363d; }
+        
+        body { 
+            background: var(--bg); color: #c9d1d9; font-family: 'Inter', sans-serif; 
+            margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden;
         }
 
-        /* EL CONTENEDOR EFECTO CRISTAL (GLASSMORPHISM) */
-        .sekai-app {
-            width: 90%;
-            max-width: 400px; /* Tamaño móvil como en tu imagen */
-            height: 80vh;
-            background: rgba(0, 0, 0, 0.6); /* Fondo oscuro translúcido */
-            backdrop-filter: blur(15px); /* El efecto de desenfoque */
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 30px;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+        /* LOGIN ESTILO GITHUB DARK */
+        #login-screen { 
+            position: fixed; inset: 0; z-index: 1000; background: var(--bg);
+            display: flex; align-items: center; justify-content: center;
         }
+        .login-card { 
+            background: var(--card); padding: 30px; border-radius: 12px; 
+            border: 1px solid var(--border); text-align: center; width: 90%; max-width: 350px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        }
+        .login-card h1 { font-family: 'Orbitron', sans-serif; color: var(--p); font-size: 1.5rem; margin-bottom: 20px; }
 
-        /* BARRA SUPERIOR */
-        .header {
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.05);
-            text-align: center;
-            color: #fff;
-            font-weight: bold;
-            letter-spacing: 2px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        /* INTERFAZ PRINCIPAL */
+        #chat-screen { display: none; flex-direction: column; height: 100vh; }
+        
+        .header { background: var(--card); border-bottom: 1px solid var(--border); padding: 12px; }
+        .nav-salas { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+        .nav-salas::-webkit-scrollbar { display: none; }
+        
+        .tab { 
+            background: #21262d; color: #c9d1d9; border: 1px solid var(--border); 
+            padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 0.8rem;
+            transition: 0.2s; white-space: nowrap;
         }
+        .tab.active { background: #238636; border-color: #2ea043; color: white; font-weight: bold; }
 
-        /* ÁREA DE MENSAJES */
-        .chat-box {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            color: #eee;
+        /* MENSAJES */
+        #messages { 
+            flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px;
+            background-image: radial-gradient(var(--border) 0.5px, transparent 0.5px);
+            background-size: 20px 20px;
         }
+        .bubble { 
+            max-width: 80%; padding: 10px 14px; border-radius: 12px; 
+            font-size: 0.9rem; line-height: 1.4; animation: fadeIn 0.2s ease-in;
+        }
+        .mine { align-self: flex-end; background: #238636; color: white; border-bottom-right-radius: 2px; }
+        .others { align-self: flex-start; background: var(--card); border: 1px solid var(--border); border-bottom-left-radius: 2px; }
+        
+        .u-name { font-size: 0.7rem; font-weight: bold; margin-bottom: 3px; display: block; color: var(--s); }
+        .time { font-size: 0.6rem; opacity: 0.6; margin-top: 5px; text-align: right; }
 
-        .message {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 12px 18px;
-            border-radius: 15px;
-            margin-bottom: 15px;
-            max-width: 80%;
-            font-size: 14px;
-            border-bottom-left-radius: 2px;
+        /* INPUT */
+        .input-area { background: var(--card); padding: 15px; display: flex; gap: 10px; border-top: 1px solid var(--border); }
+        input { 
+            flex: 1; background: #0d1117; border: 1px solid var(--border); 
+            padding: 10px 15px; border-radius: 6px; color: white; outline: none;
         }
+        input:focus { border-color: #58a6ff; box-shadow: 0 0 0 3px rgba(88,166,255,0.3); }
+        .btn-send { background: #238636; border: none; padding: 0 15px; border-radius: 6px; color: white; font-weight: bold; cursor: pointer; }
 
-        /* BARRA DE ENTRADA */
-        .input-area {
-            padding: 20px;
-            display: flex;
-            gap: 10px;
-            background: rgba(0, 0, 0, 0.2);
-        }
-
-        input {
-            flex: 1;
-            background: rgba(255, 255, 255, 0.1);
-            border: none;
-            padding: 12px;
-            border-radius: 20px;
-            color: white;
-            outline: none;
-        }
-
-        button {
-            background: #ff007f; /* Color Rosa Neón Otaku */
-            border: none;
-            color: white;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-weight: bold;
-        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
-<div class="sekai-app">
-    <div class="header"># SALA GLOBAL 🎌</div>
-    
-    <div class="chat-box">
-        <div class="message">Bienvenido al Sekai Hub...</div>
-        <div class="message">Configuración de interfaz completada. ✅</div>
+    <div id="login-screen">
+        <div class="login-card">
+            <h1>🏯 SEKAI CHAT</h1>
+            <input type="text" id="nick" placeholder="Username de GitHub..." style="width:100%; margin-bottom:15px;">
+            <button onclick="login()" style="width:100%; background:#238636; color:white; border:none; padding:10px; border-radius:6px; font-weight:bold; cursor:pointer;">SIGN IN</button>
+        </div>
     </div>
 
-    <div class="input-area">
-        <input type="text" placeholder="Escribe un mensaje...">
-        <button>➤</button>
+    <div id="chat-screen">
+        <div class="header">
+            <div class="nav-salas">
+                <button onclick="setRoom('mundo')" id="r-mundo" class="tab active">🌎 GLOBAL</button>
+                <button onclick="setRoom('otaku')" id="r-otaku" class="tab">🎎 OTAKU</button>
+                <button onclick="setRoom('musica')" id="r-musica" class="tab">🎵 MUSIC</button>
+                <button onclick="setRoom('gaming')" id="r-gaming" class="tab">🎮 GAMING</button>
+            </div>
+        </div>
+        <div id="messages"></div>
+        <div class="input-area">
+            <input type="text" id="msgInp" placeholder="Type a message or /fiesta...">
+            <button class="btn-send" onclick="send()">SEND</button>
+        </div>
     </div>
-</div>
 
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, push, onChildAdded, off } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCY8Uny7ZhPeLzR9OHZsXx5wY93kpRRFrY",
+            authDomain: "sekaichat-6b11a.firebaseapp.com",
+            projectId: "sekaichat-6b11a",
+            databaseURL: "https://sekaichat-6b11a-default-rtdb.firebaseio.com/",
+            appId: "1:405655583350:web:3c04dc2f70465cbac4bd57"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        let user = localStorage.getItem('git_user') || "";
+        let room = 'mundo';
+
+        window.login = () => {
+            const n = document.getElementById('nick').value.trim();
+            if(n.length < 2) return;
+            user = n;
+            localStorage.setItem('git_user', user);
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('chat-screen').style.display = 'flex';
+            listen();
+        };
+
+        window.setRoom = (r) => {
+            room = r;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('r-'+r).classList.add('active');
+            document.getElementById('messages').innerHTML = '';
+            off(ref(db, 'git_chat/' + room));
+            listen();
+        };
+
+        window.send = () => {
+            const inp = document.getElementById('msgInp');
+            if(!inp.value.trim()) return;
+            
+            if(inp.value === '/fiesta') confetti();
+
+            push(ref(db, 'git_chat/' + room), {
+                u: user,
+                t: inp.value,
+                h: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+            });
+            inp.value = "";
+        };
+
+        function listen() {
+            onChildAdded(ref(db, 'git_chat/' + room), (s) => {
+                const d = s.val();
+                const box = document.getElementById('messages');
+                const div = document.createElement('div');
+                div.className = `bubble ${d.u === user ? 'mine' : 'others'}`;
+                div.innerHTML = `<span class="u-name">@${d.u}</span>${d.t}<div class="time">${d.h}</div>`;
+                box.appendChild(div);
+                box.scrollTop = box.scrollHeight;
+            });
+        }
+
+        document.getElementById('msgInp').onkeypress = (e) => { if(e.key === 'Enter') send() };
+        if(user) login(); // Auto-login si ya existe el usuario
+    </script>
 </body>
-</html>
+    </html>
