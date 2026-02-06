@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sekai Hub - Interface Pro</title>
+    <title>Sekai Hub - Universal UI</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, push, onChildAdded, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
@@ -24,8 +24,7 @@
         const db = getDatabase(app);
 
         let currentRoom = "global";
-        let userName = localStorage.getItem('sekai_user') || prompt("Tu nombre de Shinobi:") || "Ninja";
-        let userPic = localStorage.getItem('sekai_pic') || "https://api.dicebear.com/7.x/avataaars/svg?seed=" + userName;
+        let userName = localStorage.getItem('sekai_user') || prompt("Tu nombre de Shinobi:") || "FABIAN";
         let msgCount = parseInt(localStorage.getItem('sekai_msgs')) || 0;
 
         localStorage.setItem('sekai_user', userName);
@@ -33,53 +32,37 @@
         const getRank = (count) => {
             if(count > 200) return { name: "HOKAGE", color: "text-cyan-400 border-cyan-400 shadow-[0_0_5px_#22d3ee]" };
             if(count > 100) return { name: "JONIN", color: "text-yellow-400 border-yellow-400" };
-            if(count > 30) return { name: "CHUNIN", color: "text-gray-300 border-gray-300" };
-            return { name: "GENIN", color: "text-orange-500 border-orange-500" };
+            return { name: "GENIN", color: "text-[#ff9d00] border-[#ff9d00]" };
         };
 
-        window.loadMessages = (roomID, roomName = "Sala Global") => {
+        window.loadMessages = (roomID, roomName = "SALA GLOBAL") => {
             currentRoom = roomID;
             document.getElementById('room-title').innerText = roomName.toUpperCase();
             const box = document.getElementById('chat-box');
             box.innerHTML = "";
-            const roomRef = ref(db, 'messages/' + roomID);
-            onChildAdded(roomRef, (data) => {
-                renderMessage(data.val());
+            onChildAdded(ref(db, 'messages/' + roomID), (data) => {
+                const msg = data.val();
+                const rank = getRank(msg.count || 0);
+                const div = document.createElement('div');
+                div.className = "mb-4 border-l-2 border-cyan-500/30 pl-3 py-1";
+                div.innerHTML = `
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="text-[10px] font-bold font-orbitron text-white uppercase">${msg.user}</span>
+                        <span class="text-[7px] px-1 border bg-black ${rank.color}">${rank.name}</span>
+                    </div>
+                    <div class="text-xs font-share text-cyan-100/80">data: ${msg.content}</div>`;
+                box.appendChild(div);
+                box.scrollTop = box.scrollHeight;
             });
         };
 
-        function renderMessage(msg) {
-            const box = document.getElementById('chat-box');
-            const isMe = msg.user === userName;
-            const rank = getRank(msg.count || 0);
-            const div = document.createElement('div');
-            div.className = `flex ${isMe ? 'flex-row-reverse' : 'flex-row'} items-end gap-3 mb-6 animate-pop`;
-            
-            div.innerHTML = `
-                <div class="flex flex-col items-center">
-                    <img src="${msg.pic}" class="w-10 h-10 rounded-lg border border-cyan-500 shadow-md object-cover bg-black">
-                </div>
-                <div class="${isMe ? 'items-end' : 'items-start'} flex flex-col max-w-[75%]">
-                    <div class="flex items-center gap-2 mb-1">
-                        <span class="text-[10px] font-bold text-cyan-400 font-orbitron uppercase">${msg.user}</span>
-                        <span class="text-[7px] px-1 border rounded bg-black/50 ${rank.color}">${rank.name}</span>
-                    </div>
-                    <div class="p-3 rounded-lg border border-white/10 ${isMe ? 'bg-cyan-900/40' : 'bg-zinc-900/80'} shadow-lg text-gray-200">
-                        <p class="text-sm font-medium">${msg.content}</p>
-                    </div>
-                </div>`;
-            box.appendChild(div);
-            box.scrollTop = box.scrollHeight;
-        }
-
         window.sendMessage = () => {
             const input = document.getElementById('user-input');
-            const content = input.value;
-            if (!content) return;
+            if (!input.value) return;
             msgCount++;
             localStorage.setItem('sekai_msgs', msgCount);
             push(ref(db, 'messages/' + currentRoom), {
-                user: userName, pic: userPic, type: 'text', content: content, count: msgCount, timestamp: serverTimestamp()
+                user: userName, type: 'text', content: input.value, count: msgCount, timestamp: serverTimestamp()
             });
             input.value = "";
         };
@@ -87,126 +70,109 @@
         window.loadMessages("global");
     </script>
     <style>
+        :root { --neon: #22d3ee; }
         body { 
-            background: #000 url('https://i.ibb.co/v4mS8yYf/otaku-chat-neon.jpg') no-repeat center center fixed;
-            background-size: cover;
-            color: #e2e8f0; 
-            font-family: 'Rajdhani', sans-serif; 
-            height: 100dvh; 
-            display: flex; 
-            align-items: center;
-            justify-content: center;
-            margin: 0; 
-        }
-        .main-frame {
-            width: 95vw;
-            height: 90vh;
-            background: rgba(5, 5, 5, 0.9);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(34, 211, 238, 0.3);
-            border-radius: 12px;
-            display: flex;
-            overflow: hidden;
-            box-shadow: 0 0 40px rgba(0,0,0,0.8), 0 0 20px rgba(34, 211, 238, 0.1);
-        }
-        .sidebar {
-            width: 260px;
-            background: rgba(10, 10, 10, 0.95);
-            border-right: 1px solid rgba(255, 255, 255, 0.05);
-            display: flex;
-            flex-direction: column;
-            padding: 24px;
-        }
-        .nav-item {
-            padding: 14px 20px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            color: #666;
-            font-weight: 700;
-            font-size: 13px;
-            transition: 0.3s;
-            border: 1px solid transparent;
-        }
-        .nav-item:hover, .nav-item.active {
-            background: rgba(34, 211, 238, 0.05);
-            color: #22d3ee;
-            border-color: rgba(34, 211, 238, 0.2);
-            box-shadow: inset 3px 0 0 #22d3ee;
+            background: #000; 
+            color: #e2e8f0; font-family: 'Rajdhani', sans-serif; 
+            height: 100dvh; margin: 0; overflow: hidden;
         }
         .font-orbitron { font-family: 'Orbitron', sans-serif; }
-        .animate-pop { animation: pop 0.3s ease-out; }
-        @keyframes pop { from { opacity:0; transform: scale(0.95); } to { opacity:1; transform: scale(1); } }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: #22d3ee; }
+        .font-share { font-family: 'Share Tech Mono', monospace; }
+
+        /* Contenedor Principal Adaptable */
+        .app-container {
+            display: flex;
+            height: 100%;
+            width: 100%;
+            border: 1px solid rgba(34, 211, 238, 0.2);
+        }
+
+        /* Sidebar: Se oculta en móviles, se muestra en PC */
+        .sidebar {
+            width: 200px;
+            background: rgba(10, 10, 10, 0.95);
+            border-right: 1px solid rgba(34, 211, 238, 0.1);
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { width: 60px; }
+            .sidebar span:not(.icon) { display: none; }
+            .sidebar h2, .sidebar .user-info { display: none; }
+        }
+
+        .logo-box {
+            width: 40px; height: 40px; background: var(--neon);
+            display: flex; align-items: center; justify-content: center;
+            margin: 20px auto; box-shadow: 0 0 15px rgba(34, 211, 238, 0.5);
+        }
+
+        .nav-btn {
+            padding: 15px; width: 100%; display: flex; align-items: center; justify-content: center;
+            gap: 10px; font-size: 12px; color: #555; transition: 0.3s;
+        }
+        @media (min-width: 769px) { .nav-btn { justify-content: flex-start; padding-left: 25px; } }
+        .nav-btn:hover { color: var(--neon); background: rgba(34, 211, 238, 0.05); }
+
+        /* Chat Box Scroll */
+        #chat-box::-webkit-scrollbar { width: 2px; }
+        #chat-box::-webkit-scrollbar-thumb { background: var(--neon); }
     </style>
 </head>
 <body>
 
-    <div class="main-frame">
-        <aside class="sidebar hidden md:flex">
-            <div class="flex items-center gap-3 mb-10">
-                <div class="w-10 h-10 bg-cyan-500 rounded flex items-center justify-center shadow-[0_0_15px_rgba(34,211,238,0.5)]">
-                    <span class="font-orbitron font-bold text-black text-xl">S</span>
-                </div>
-                <span class="font-orbitron font-bold tracking-tighter text-white">SEKAI HUB</span>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="logo-box">
+                <span class="text-black font-orbitron text-2xl font-bold">S</span>
             </div>
+            <h2 class="text-center font-orbitron text-[9px] tracking-[0.2em] mb-6 text-white px-2">SEKAI HUB</h2>
+            
+            <nav class="flex-1">
+                <button onclick="loadMessages('global')" class="nav-btn"><span class="icon">🌎</span> <span>GLOBAL</span></button>
+                <button onclick="loadMessages('anime')" class="nav-btn"><span class="icon">🎌</span> <span>ANIME</span></button>
+                <button class="nav-btn"><span class="icon">🏆</span> <span>RANK</span></button>
+            </nav>
 
-            <div class="flex-1">
-                <button onclick="loadMessages('global', 'Sala Global')" class="nav-item active w-full">
-                    <span>🌎</span> GLOBAL
-                </button>
-                <button onclick="loadMessages('anime', 'Sala Anime')" class="nav-item w-full">
-                    <span>🎌</span> ANIME
-                </button>
-                <button class="nav-item w-full">
-                    <span>🏆</span> RANKING
-                </button>
-                <button class="nav-item w-full">
-                    <span>🔒</span> PRIVADO
-                </button>
-            </div>
-
-            <div class="mt-auto border-t border-white/5 pt-4">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-full bg-cyan-500/20 border border-cyan-500/50"></div>
-                    <div>
-                        <p class="text-[10px] font-bold text-white uppercase" id="display-username">Cargando...</p>
-                        <p class="text-[8px] text-green-500 font-bold">● ONLINE</p>
-                    </div>
-                </div>
+            <div class="user-info p-4 border-t border-white/5">
+                <p class="text-[10px] font-bold font-orbitron text-white" id="display-username">FABIAN</p>
+                <p class="text-[8px] text-green-500 font-bold tracking-tighter">● ONLINE</p>
             </div>
         </aside>
 
-        <section class="flex-1 flex flex-col bg-zinc-950/20">
-            <header class="h-20 flex items-center justify-between px-8 border-b border-white/5">
-                <div>
-                    <h1 id="room-title" class="text-xl font-orbitron font-bold text-white tracking-[0.2em]">SALA GLOBAL</h1>
-                    <p class="text-[9px] text-cyan-400/70 font-bold tracking-widest uppercase mt-1">Status: Encrypted</p>
-                </div>
-            </header>
+        <main class="flex-1 flex flex-col bg-[url('https://i.ibb.co/v4mS8yYf/otaku-chat-neon.jpg')] bg-cover bg-center">
+            <div class="flex-1 flex flex-col bg-black/80 backdrop-blur-sm">
+                
+                <header class="p-4 border-b border-white/5 flex justify-between items-center">
+                    <div>
+                        <h1 id="room-title" class="text-lg md:text-xl font-orbitron font-bold text-white tracking-tight">SALA GLOBAL</h1>
+                        <p class="text-[8px] text-cyan-400 font-share uppercase tracking-widest">Status: Encrypted</p>
+                    </div>
+                </header>
 
-            <main id="chat-box" class="flex-1 overflow-y-auto p-6 space-y-2"></main>
+                <div id="chat-box" class="flex-1 overflow-y-auto p-4 space-y-2">
+                    </div>
 
-            <footer class="p-6">
-                <div class="max-w-4xl mx-auto flex gap-2 bg-black/60 p-2 rounded-lg border border-cyan-500/30 shadow-lg">
-                    <input type="text" id="user-input" 
-                        onkeypress="if(event.key==='Enter') window.sendMessage()" 
-                        placeholder="Escribe tu mensaje..." 
-                        class="flex-1 bg-transparent outline-none text-white px-4 text-sm font-medium">
-                    <button onclick="window.sendMessage()" 
-                        class="px-6 py-2 bg-cyan-500 hover:bg-cyan-400 text-black font-bold rounded font-orbitron text-[10px] transition-all">
-                        ENVIAR
-                    </button>
-                </div>
-            </footer>
-        </section>
+                <footer class="p-4 bg-black/90">
+                    <div class="flex border border-cyan-500/40 rounded shadow-lg shadow-cyan-500/5">
+                        <input type="text" id="user-input" 
+                            onkeypress="if(event.key==='Enter') window.sendMessage()"
+                            placeholder="INPUT_DATA >" 
+                            class="flex-1 bg-ytransparent outline-none text-cyan-400 px-3 py-3 font-share text-sm w-full">
+                        <button onclick="window.sendMessage()" 
+                            class="bg-cyan-500 px-4 md:px-8 font-orbitron text-[10px] text-black font-bold">
+                            SEND
+                        </button>
+                    </div>
+                </footer>
+            </div>
+        </main>
     </div>
 
     <script>
-        document.getElementById('display-username').innerText = localStorage.getItem('sekai_user');
+        document.getElementById('display-username').innerText = localStorage.getItem('sekai_user') || 'FABIAN';
     </script>
 </body>
 </html>
