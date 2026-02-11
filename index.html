@@ -2,40 +2,134 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Sekai Chat OS</title>
+    <title>Sekai Ecosystem OS</title>
     <style>
-        body { background: #050505; color: #00ffcc; font-family: 'Courier New', monospace; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .terminal { width: 400px; height: 500px; background: #111; border: 2px solid #00ffcc; box-shadow: 0 0 15px #00ffcc; display: flex; flex-direction: column; border-radius: 10px; overflow: hidden; }
-        .header { background: #00ffcc; color: #000; padding: 10px; text-align: center; font-weight: bold; }
-        .stats-bar { background: #1a1a1d; padding: 10px; font-size: 0.8em; color: gold; text-align: center; border-bottom: 1px solid #333; }
-        #chat-box { flex: 1; padding: 15px; overflow-y: auto; }
-        .input-area { display: flex; padding: 10px; background: #000; border-top: 1px solid #333; }
-        input { flex: 1; background: transparent; border: 1px solid #00ffcc; color: white; padding: 8px; outline: none; }
-        button { background: #00ffcc; border: none; padding: 10px; margin-left: 5px; cursor: pointer; font-weight: bold; }
-        .prison { color: #ff3366; }
+        :root { --neon: #00ffcc; --prison: #ff3366; --gold: #ffcc00; }
+        body { background: #050505; color: var(--neon); font-family: 'Courier New', monospace; display: flex; height: 100vh; margin: 0; overflow: hidden; }
+        
+        /* Panel Lateral (Navegación de Chats) */
+        .sidebar { width: 200px; background: #0a0a0c; border-right: 2px solid var(--neon); display: flex; flex-direction: column; padding: 10px; }
+        .sidebar h3 { font-size: 0.8em; color: white; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .nav-btn { background: transparent; border: 1px solid #222; color: #666; padding: 10px; margin: 5px 0; cursor: pointer; text-align: left; font-size: 0.75em; }
+        .nav-btn.active { border-color: var(--neon); color: var(--neon); box-shadow: 0 0 5px var(--neon); }
+        .nav-btn:hover { background: #111; color: white; }
+
+        /* Contenedor Principal */
+        .main-content { flex: 1; display: flex; flex-direction: column; position: relative; }
+        .header { background: var(--neon); color: #000; padding: 10px; font-weight: bold; text-align: center; font-size: 0.9em; letter-spacing: 2px; }
+        
+        .stats-bar { background: #111; padding: 10px; border-bottom: 1px solid #222; display: flex; justify-content: space-around; font-size: 0.8em; color: var(--gold); }
+
+        #chat-area { flex: 1; padding: 20px; overflow-y: auto; background: rgba(0,0,0,0.8); }
+        .msg { margin-bottom: 10px; font-size: 0.9em; }
+        .sys { color: #888; font-style: italic; }
+
+        /* Área de Comandos */
+        .input-area { padding: 15px; background: #000; border-top: 2px solid #222; display: flex; }
+        input { flex: 1; background: #0a0a0a; border: 1px solid #333; color: white; padding: 10px; outline: none; }
+        input:focus { border-color: var(--neon); }
+        button { background: var(--neon); border: none; padding: 0 20px; font-weight: bold; cursor: pointer; margin-left: 10px; }
+
+        /* Estilo Prisión */
+        .mode-prison { border-color: var(--prison) !important; color: var(--prison) !important; }
+        .mode-prison .header { background: var(--prison); }
     </style>
 </head>
 <body>
-    <div class="terminal">
-        <div class="header">SEKAI CHAT OS v1.0</div>
-        <div class="stats-bar">BALANCE: <span id="bal">1000</span>¥ | ESTADO: <span id="stat">Libre</span></div>
-        <div id="chat-box">
-            <p style="color:gray italic">[SISTEMA]: Enlace neuronal establecido.</p>
+
+    <div class="sidebar">
+        <h3>SEKAI NAVIGATOR</h3>
+        <button class="nav-btn active" onclick="changeChat('Centro')">🌐 Distrito Central</button>
+        <button class="nav-btn" onclick="changeChat('Lujo')">💎 Distrito de Lujo</button>
+        <button class="nav-btn" onclick="changeChat('Prisión')">⛓️ La Prisión</button>
+        <button class="nav-btn" onclick="changeChat('Privado')">🔒 Chat Privado</button>
+        <div style="margin-top: auto; font-size: 0.6em; color: #444;">v1.0 Compendio Sync</div>
+    </div>
+
+    <div class="main-content" id="app">
+        <div class="header" id="current-title">DISTRITO CENTRAL</div>
+        
+        <div class="stats-bar">
+            <span>YEN: <span id="bal">1000</span>¥</span>
+            <span>RANGO: <span id="rango">Explorador</span></span>
+            <span>ESTADO: <span id="status">Libre</span></span>
         </div>
+
+        <div id="chat-area">
+            <p class="msg sys">[SISTEMA]: Bienvenido al Ecosistema Sekai. Todos los módulos cargados.</p>
+        </div>
+
         <div class="input-area">
-            <input type="text" id="userInput" placeholder="Escribe comando...">
-            <button onclick="run()">ENVIAR</button>
+            <input type="text" id="userInput" placeholder="Escribe comando (gacha, heist, duelo)...">
+            <button onclick="execute()">ENVIAR</button>
         </div>
     </div>
+
     <script>
-        let b = 1000, s = "Libre";
-        function run() {
-            let i = document.getElementById('userInput'), c = i.value.toLowerCase(), box = document.getElementById('chat-box');
-            if (s === "Prisionero") { box.innerHTML += "<p class='prison'>🚨 ACCESO DENEGADO</p>"; i.value=""; return; }
-            if (c === 'gacha' && b >= 500) { b -= 500; box.innerHTML += "<p>✨ GACHA: ¡Reliquia obtenida!</p>"; }
-            else if (c === 'heist') { if(Math.random() > 0.5) { b += 1000; box.innerHTML += "<p>💰 ÉXITO.</p>"; } else { s = "Prisionero"; box.innerHTML += "<p class='prison'>🚨 ¡PRESO!</p>"; } }
-            document.getElementById('bal').innerText = b; document.getElementById('stat').innerText = s;
-            i.value = ""; box.scrollTop = box.scrollHeight;
+        let b = 1000, s = "Libre", chatActual = "Centro";
+        const area = document.getElementById('chat-area');
+
+        function changeChat(name) {
+            chatActual = name;
+            document.getElementById('current-title').innerText = name.toUpperCase();
+            
+            // Lógica de acceso
+            if(name === 'Lujo' && b < 5000) {
+                addMsg("SISTEMA", "Acceso Denegado. Necesitas 5000¥ para entrar al Distrito de Lujo.", "sys");
+                return;
+            }
+            
+            addMsg("SISTEMA", `Cambiando al canal: ${name}...`, "sys");
+            
+            // Cambiar colores si es Prisión
+            if(name === 'Prisión') {
+                document.getElementById('app').className = 'main-content mode-prison';
+            } else {
+                document.getElementById('app').className = 'main-content';
+            }
+        }
+
+        function addMsg(user, text, type="") {
+            const p = document.createElement('p');
+            p.className = `msg ${type}`;
+            p.innerHTML = `<strong>${user}:</strong> ${text}`;
+            area.appendChild(p);
+            area.scrollTop = area.scrollHeight;
+        }
+
+        function execute() {
+            const input = document.getElementById('userInput');
+            const cmd = input.value.toLowerCase().trim();
+            input.value = "";
+
+            if (s === "Prisionero" && cmd !== "fianza") {
+                addMsg("SISTEMA", "Estás procesado. Solo puedes usar 'fianza'.", "mode-prison");
+                return;
+            }
+
+            if (cmd === "gacha") {
+                if(b >= 500) {
+                    b -= 500;
+                    const items = ["Llave de Cobre", "Daga de Cristal", "Ojo de Vigilante"];
+                    addMsg("GACHA", `¡Obtenido: ${items[Math.floor(Math.random()*items.length)]}!`);
+                }
+            } else if (cmd === "heist") {
+                if(Math.random() > 0.7) {
+                    b += 2000;
+                    addMsg("SISTEMA", "💰 Atraco exitoso. +2000¥ extraídos.");
+                } else {
+                    s = "Prisionero";
+                    changeChat('Prisión');
+                    addMsg("SEGURIDAD", "🚨 ¡CAPTURADO! Has sido enviado a la Prisión.", "mode-prison");
+                }
+            } else if (cmd === "fianza") {
+                if(b >= 1500) { b -= 1500; s = "Libre"; changeChat('Centro'); addMsg("SISTEMA", "Fianza pagada. Estás libre."); }
+            } else {
+                addMsg("TÚ", cmd);
+            }
+            
+            document.getElementById('bal').innerText = b;
+            document.getElementById('status').innerText = s;
         }
     </script>
 </body>
