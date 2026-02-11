@@ -4,33 +4,113 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sekai Chat OS</title>
-    
-    <link rel="stylesheet" href="style.css">
-    
+    <style>
+        /* --- AQUÍ ESTÁ EL CSS (DISEÑO) --- */
+        body {
+            background: #050505; /* Fondo Negro */
+            color: #00ffcc;     /* Verde Neón */
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .terminal {
+            width: 90%;
+            max-width: 450px;
+            height: 550px;
+            background: #111;
+            border: 2px solid #00ffcc;
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.3);
+            display: flex;
+            flex-direction: column;
+            border-radius: 5px;
+        }
+
+        .header {
+            background: #00ffcc;
+            color: #000;
+            padding: 12px;
+            text-align: center;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        #chat-box {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            border-bottom: 1px solid #222;
+        }
+
+        .stats-bar {
+            background: #1a1a1d;
+            padding: 10px;
+            font-size: 0.85em;
+            color: gold;
+            text-align: center;
+            border-bottom: 1px solid #333;
+        }
+
+        .input-area {
+            display: flex;
+            padding: 10px;
+            background: #000;
+        }
+
+        input {
+            flex: 1;
+            background: transparent;
+            border: 1px solid #00ffcc;
+            color: white;
+            padding: 10px;
+            outline: none;
+        }
+
+        button {
+            background: #00ffcc;
+            border: none;
+            padding: 0 15px;
+            margin-left: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background: #fff;
+            box-shadow: 0 0 10px #fff;
+        }
+
+        .system-msg { color: #888; font-style: italic; }
+        .prison { color: #ff3366; font-weight: bold; text-shadow: 0 0 5px #ff3366; }
+    </style>
 </head>
 <body>
 
     <div class="terminal">
         <div class="header">SEKAI CHAT OS v1.0</div>
         
-        <div id="chat-box">
-            <p class="system-msg">[SISTEMA]: Enlace neuronal establecido. Bienvenido al Ecosistema Sekai.</p>
-            <p>[INFO]: Escribe 'gacha' para reliquias o 'heist' para créditos.</p>
-        </div>
-
         <div class="stats-bar">
             <span>BALANCE: <span id="bal-val">1000</span>¥</span> | 
             <span>ESTADO: <span id="stat-val">Libre</span></span>
         </div>
 
+        <div id="chat-box">
+            <p class="system-msg">[SISTEMA]: Enlace neuronal establecido. Bienvenido al Ecosistema Sekai.</p>
+            <p>[INFO]: Escribe 'gacha' para reliquias o 'heist' para créditos.</p>
+        </div>
+
         <div class="input-area">
-            <input type="text" id="userInput" placeholder="Escribe un comando...">
-            <button onclick="runCommand()">EJECUTAR</button>
+            <input type="text" id="userInput" placeholder="Comando...">
+            <button onclick="runCommand()">ENVIAR</button>
         </div>
     </div>
 
     <script>
-        // Lógica interactiva de Sekai
+        /* --- AQUÍ ESTÁ LA LÓGICA (JAVASCRIPT) --- */
         let balance = 1000;
         let status = "Libre";
 
@@ -72,7 +152,7 @@
                 if (Math.random() > 0.6) {
                     const premio = 1200;
                     balance += premio;
-                    addLog(`💰 HEIST EXITOSO: +${premio}¥ extraídos del sistema.`);
+                    addLog(`💰 HEIST EXITOSO: +${premio}¥ extraídos.`);
                 } else {
                     status = "Prisionero";
                     addLog("🚨 ALERTA: Intento de hackeo detectado. TRASLADANDO A PRISIÓN...", "prison");
