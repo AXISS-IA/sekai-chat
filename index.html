@@ -2,61 +2,82 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Sekai Chat Interface</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sekai Chat OS</title>
+    
     <link rel="stylesheet" href="style.css">
+    
 </head>
 <body>
 
     <div class="terminal">
         <div class="header">SEKAI CHAT OS v1.0</div>
+        
         <div id="chat-box">
-            <p>[SISTEMA]: Escribe 'gacha' para probar tu suerte o 'heist' para arriesgarte.</p>
+            <p class="system-msg">[SISTEMA]: Enlace neuronal establecido. Bienvenido al Ecosistema Sekai.</p>
+            <p>[INFO]: Escribe 'gacha' para reliquias o 'heist' para créditos.</p>
         </div>
+
+        <div class="stats-bar">
+            <span>BALANCE: <span id="bal-val">1000</span>¥</span> | 
+            <span>ESTADO: <span id="stat-val">Libre</span></span>
+        </div>
+
         <div class="input-area">
             <input type="text" id="userInput" placeholder="Escribe un comando...">
-            <button onclick="runCommand()">ENVIAR</button>
+            <button onclick="runCommand()">EJECUTAR</button>
         </div>
     </div>
 
     <script>
+        // Lógica interactiva de Sekai
         let balance = 1000;
         let status = "Libre";
 
-        function addLog(msg, isPrison = false) {
+        function updateUI() {
+            document.getElementById('bal-val').innerText = balance;
+            document.getElementById('stat-val').innerText = status;
+        }
+
+        function addLog(msg, type = "") {
             const box = document.getElementById('chat-box');
             const p = document.createElement('p');
-            if(isPrison) p.className = 'prison';
+            if(type) p.className = type;
             p.innerText = msg;
             box.appendChild(p);
             box.scrollTop = box.scrollHeight;
+            updateUI();
         }
 
         function runCommand() {
             const input = document.getElementById('userInput');
-            const cmd = input.value.toLowerCase();
+            const cmd = input.value.toLowerCase().trim();
             input.value = "";
 
             if (status === "Prisionero") {
-                addLog("🚨 ESTÁS EN LA PRISIÓN. No puedes actuar.", true);
+                addLog("🚨 ACCESO DENEGADO: Estás en la Prisión de Sekai.", "prison");
                 return;
             }
 
             if (cmd === "gacha") {
                 if (balance >= 500) {
                     balance -= 500;
-                    addLog("✨ GACHA: ¡Has obtenido una Reliquia Común! (Balance: " + balance + "¥)");
+                    const items = ["Llave de Cobre", "Daga de Cristal", "Fragmento de Código"];
+                    const item = items[Math.floor(Math.random()*items.length)];
+                    addLog(`✨ GACHA: ¡Has obtenido [${item}]!`);
                 } else {
-                    addLog("❌ No tienes suficiente dinero.");
+                    addLog("❌ CRÉDITOS INSUFICIENTES.", "prison");
                 }
             } else if (cmd === "heist") {
-                if (Math.random() > 0.5) {
-                    balance += 1000;
-                    addLog("💰 ¡Heist exitoso! Ganaste 1000¥.");
+                if (Math.random() > 0.6) {
+                    const premio = 1200;
+                    balance += premio;
+                    addLog(`💰 HEIST EXITOSO: +${premio}¥ extraídos del sistema.`);
                 } else {
                     status = "Prisionero";
-                    addLog("🚨 FALLASTE EL ATRACO. Trasladado a la Prisión.", true);
+                    addLog("🚨 ALERTA: Intento de hackeo detectado. TRASLADANDO A PRISIÓN...", "prison");
                 }
-            } else {
+            } else if (cmd !== "") {
                 addLog("> " + cmd);
             }
         }
