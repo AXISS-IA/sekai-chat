@@ -2,164 +2,40 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sekai Chat OS</title>
     <style>
-        /* --- AQUÍ ESTÁ EL CSS (DISEÑO) --- */
-        body {
-            background: #050505; /* Fondo Negro */
-            color: #00ffcc;     /* Verde Neón */
-            font-family: 'Courier New', Courier, monospace;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-
-        .terminal {
-            width: 90%;
-            max-width: 450px;
-            height: 550px;
-            background: #111;
-            border: 2px solid #00ffcc;
-            box-shadow: 0 0 20px rgba(0, 255, 204, 0.3);
-            display: flex;
-            flex-direction: column;
-            border-radius: 5px;
-        }
-
-        .header {
-            background: #00ffcc;
-            color: #000;
-            padding: 12px;
-            text-align: center;
-            font-weight: bold;
-            letter-spacing: 2px;
-        }
-
-        #chat-box {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            border-bottom: 1px solid #222;
-        }
-
-        .stats-bar {
-            background: #1a1a1d;
-            padding: 10px;
-            font-size: 0.85em;
-            color: gold;
-            text-align: center;
-            border-bottom: 1px solid #333;
-        }
-
-        .input-area {
-            display: flex;
-            padding: 10px;
-            background: #000;
-        }
-
-        input {
-            flex: 1;
-            background: transparent;
-            border: 1px solid #00ffcc;
-            color: white;
-            padding: 10px;
-            outline: none;
-        }
-
-        button {
-            background: #00ffcc;
-            border: none;
-            padding: 0 15px;
-            margin-left: 10px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: 0.3s;
-        }
-
-        button:hover {
-            background: #fff;
-            box-shadow: 0 0 10px #fff;
-        }
-
-        .system-msg { color: #888; font-style: italic; }
-        .prison { color: #ff3366; font-weight: bold; text-shadow: 0 0 5px #ff3366; }
+        body { background: #050505; color: #00ffcc; font-family: 'Courier New', monospace; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .terminal { width: 400px; height: 500px; background: #111; border: 2px solid #00ffcc; box-shadow: 0 0 15px #00ffcc; display: flex; flex-direction: column; border-radius: 10px; overflow: hidden; }
+        .header { background: #00ffcc; color: #000; padding: 10px; text-align: center; font-weight: bold; }
+        .stats-bar { background: #1a1a1d; padding: 10px; font-size: 0.8em; color: gold; text-align: center; border-bottom: 1px solid #333; }
+        #chat-box { flex: 1; padding: 15px; overflow-y: auto; }
+        .input-area { display: flex; padding: 10px; background: #000; border-top: 1px solid #333; }
+        input { flex: 1; background: transparent; border: 1px solid #00ffcc; color: white; padding: 8px; outline: none; }
+        button { background: #00ffcc; border: none; padding: 10px; margin-left: 5px; cursor: pointer; font-weight: bold; }
+        .prison { color: #ff3366; }
     </style>
 </head>
 <body>
-
     <div class="terminal">
         <div class="header">SEKAI CHAT OS v1.0</div>
-        
-        <div class="stats-bar">
-            <span>BALANCE: <span id="bal-val">1000</span>¥</span> | 
-            <span>ESTADO: <span id="stat-val">Libre</span></span>
-        </div>
-
+        <div class="stats-bar">BALANCE: <span id="bal">1000</span>¥ | ESTADO: <span id="stat">Libre</span></div>
         <div id="chat-box">
-            <p class="system-msg">[SISTEMA]: Enlace neuronal establecido. Bienvenido al Ecosistema Sekai.</p>
-            <p>[INFO]: Escribe 'gacha' para reliquias o 'heist' para créditos.</p>
+            <p style="color:gray italic">[SISTEMA]: Enlace neuronal establecido.</p>
         </div>
-
         <div class="input-area">
-            <input type="text" id="userInput" placeholder="Comando...">
-            <button onclick="runCommand()">ENVIAR</button>
+            <input type="text" id="userInput" placeholder="Escribe comando...">
+            <button onclick="run()">ENVIAR</button>
         </div>
     </div>
-
     <script>
-        /* --- AQUÍ ESTÁ LA LÓGICA (JAVASCRIPT) --- */
-        let balance = 1000;
-        let status = "Libre";
-
-        function updateUI() {
-            document.getElementById('bal-val').innerText = balance;
-            document.getElementById('stat-val').innerText = status;
-        }
-
-        function addLog(msg, type = "") {
-            const box = document.getElementById('chat-box');
-            const p = document.createElement('p');
-            if(type) p.className = type;
-            p.innerText = msg;
-            box.appendChild(p);
-            box.scrollTop = box.scrollHeight;
-            updateUI();
-        }
-
-        function runCommand() {
-            const input = document.getElementById('userInput');
-            const cmd = input.value.toLowerCase().trim();
-            input.value = "";
-
-            if (status === "Prisionero") {
-                addLog("🚨 ACCESO DENEGADO: Estás en la Prisión de Sekai.", "prison");
-                return;
-            }
-
-            if (cmd === "gacha") {
-                if (balance >= 500) {
-                    balance -= 500;
-                    const items = ["Llave de Cobre", "Daga de Cristal", "Fragmento de Código"];
-                    const item = items[Math.floor(Math.random()*items.length)];
-                    addLog(`✨ GACHA: ¡Has obtenido [${item}]!`);
-                } else {
-                    addLog("❌ CRÉDITOS INSUFICIENTES.", "prison");
-                }
-            } else if (cmd === "heist") {
-                if (Math.random() > 0.6) {
-                    const premio = 1200;
-                    balance += premio;
-                    addLog(`💰 HEIST EXITOSO: +${premio}¥ extraídos.`);
-                } else {
-                    status = "Prisionero";
-                    addLog("🚨 ALERTA: Intento de hackeo detectado. TRASLADANDO A PRISIÓN...", "prison");
-                }
-            } else if (cmd !== "") {
-                addLog("> " + cmd);
-            }
+        let b = 1000, s = "Libre";
+        function run() {
+            let i = document.getElementById('userInput'), c = i.value.toLowerCase(), box = document.getElementById('chat-box');
+            if (s === "Prisionero") { box.innerHTML += "<p class='prison'>🚨 ACCESO DENEGADO</p>"; i.value=""; return; }
+            if (c === 'gacha' && b >= 500) { b -= 500; box.innerHTML += "<p>✨ GACHA: ¡Reliquia obtenida!</p>"; }
+            else if (c === 'heist') { if(Math.random() > 0.5) { b += 1000; box.innerHTML += "<p>💰 ÉXITO.</p>"; } else { s = "Prisionero"; box.innerHTML += "<p class='prison'>🚨 ¡PRESO!</p>"; } }
+            document.getElementById('bal').innerText = b; document.getElementById('stat').innerText = s;
+            i.value = ""; box.scrollTop = box.scrollHeight;
         }
     </script>
 </body>
