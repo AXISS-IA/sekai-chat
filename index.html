@@ -1,59 +1,65 @@
-import random
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Sekai Chat Interface</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
 
-class SekaiUser:
-    def __init__(self, username, balance=1000):
-        self.username = username
-        self.balance = balance
-        self.inventory = []
-        self.status = "Libre"  # Libre o Prisionero
-        self.infractions = 0
+    <div class="terminal">
+        <div class="header">SEKAI CHAT OS v1.0</div>
+        <div id="chat-box">
+            <p>[SISTEMA]: Escribe 'gacha' para probar tu suerte o 'heist' para arriesgarte.</p>
+        </div>
+        <div class="input-area">
+            <input type="text" id="userInput" placeholder="Escribe un comando...">
+            <button onclick="runCommand()">ENVIAR</button>
+        </div>
+    </div>
 
-    def __str__(self):
-        return f"[{self.status}] {self.username} - Balance: {self.balance}¥ - Inventario: {len(self.inventory)} objetos"
+    <script>
+        let balance = 1000;
+        let status = "Libre";
 
-class SekaiEngine:
-    def __init__(self):
-        self.relics_pool = {
-            "Común": ["Llave de Cobre", "Fragmento de Código"],
-            "Raro": ["Daga de Cristal", "Pase de Distrito"],
-            "Épico": ["Ojo de Vigilante", "Cifrado Maestro"],
-            "Legendario": ["Reliquia Ancestral de Sekai"]
+        function addLog(msg, isPrison = false) {
+            const box = document.getElementById('chat-box');
+            const p = document.createElement('p');
+            if(isPrison) p.className = 'prison';
+            p.innerText = msg;
+            box.appendChild(p);
+            box.scrollTop = box.scrollHeight;
         }
 
-    def pull_gacha(self, user):
-        cost = 500
-        if user.balance < cost:
-            return "❌ Fondos insuficientes para el Gacha."
-        
-        user.balance -= cost
-        # Probabilidades: 70% Común, 20% Raro, 8% Épico, 2% Legendario
-        rarity = random.choices(
-            ["Común", "Raro", "Épico", "Legendario"], 
-            weights=[70, 20, 8, 2]
-        )[0]
-        
-        item = random.choice(self.relics_pool[rarity])
-        user.inventory.append(item)
-        return f"✨ ¡{user.username} ha obtenido [{rarity}] {item}!"
+        function runCommand() {
+            const input = document.getElementById('userInput');
+            const cmd = input.value.toLowerCase();
+            input.value = "";
 
-    def apply_prison_protocol(self, user, reason):
-        user.status = "Prisionero"
-        user.infractions += 1
-        return f"🚨 PROTOCOLO DE SEGURIDAD 🚨\nFicha de Prisionero: {user.username}\nInfracción: {reason}\nEstado: Procesando en la Prisión de Sekai..."
+            if (status === "Prisionero") {
+                addLog("🚨 ESTÁS EN LA PRISIÓN. No puedes actuar.", true);
+                return;
+            }
 
-# --- PRUEBA DEL SISTEMA ---
-engine = SekaiEngine()
-player = SekaiUser("Explorer_01")
-
-print(f"--- Inicio de Sesión ---")
-print(player)
-
-print(f"\n--- Intentando Gacha ---")
-print(engine.pull_gacha(player))
-print(player)
-
-print(f"\n--- Activando Protocolo de Seguridad ---")
-if player.balance < 600: # Simulación de una falta por 'insolvencia' o conducta
-    print(engine.apply_prison_protocol(player, "Intento de hackeo en Distrito de Lujo"))
-
-print(player)
+            if (cmd === "gacha") {
+                if (balance >= 500) {
+                    balance -= 500;
+                    addLog("✨ GACHA: ¡Has obtenido una Reliquia Común! (Balance: " + balance + "¥)");
+                } else {
+                    addLog("❌ No tienes suficiente dinero.");
+                }
+            } else if (cmd === "heist") {
+                if (Math.random() > 0.5) {
+                    balance += 1000;
+                    addLog("💰 ¡Heist exitoso! Ganaste 1000¥.");
+                } else {
+                    status = "Prisionero";
+                    addLog("🚨 FALLASTE EL ATRACO. Trasladado a la Prisión.", true);
+                }
+            } else {
+                addLog("> " + cmd);
+            }
+        }
+    </script>
+</body>
+</html>
