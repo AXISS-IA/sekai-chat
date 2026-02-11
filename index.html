@@ -1,134 +1,73 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
     <meta charset="UTF-8">
-    <title>Sekai Ecosystem OS</title>
+    <title>SEKAI OS</title>
     <style>
-        :root { --neon: #00ffcc; --prison: #ff3366; --gold: #ffcc00; }
-        body { background: #050505; color: var(--neon); font-family: 'Courier New', monospace; display: flex; height: 100vh; margin: 0; overflow: hidden; }
+        * { box-sizing: border-box; }
+        body { background: #000; color: #00ffcc; font-family: monospace; margin: 0; display: flex; height: 100vh; }
         
-        /* Panel Lateral (Navegación de Chats) */
-        .sidebar { width: 200px; background: #0a0a0c; border-right: 2px solid var(--neon); display: flex; flex-direction: column; padding: 10px; }
-        .sidebar h3 { font-size: 0.8em; color: white; border-bottom: 1px solid #333; padding-bottom: 10px; }
-        .nav-btn { background: transparent; border: 1px solid #222; color: #666; padding: 10px; margin: 5px 0; cursor: pointer; text-align: left; font-size: 0.75em; }
-        .nav-btn.active { border-color: var(--neon); color: var(--neon); box-shadow: 0 0 5px var(--neon); }
-        .nav-btn:hover { background: #111; color: white; }
+        /* Barra Lateral */
+        .nav { width: 180px; background: #0a0a0a; border-right: 2px solid #00ffcc; padding: 10px; display: flex; flex-direction: column; }
+        .nav button { background: none; border: 1px solid #00ffcc; color: #00ffcc; margin-bottom: 10px; padding: 8px; cursor: pointer; font-size: 10px; text-transform: uppercase; }
+        .nav button:hover { background: #00ffcc; color: #000; }
 
-        /* Contenedor Principal */
-        .main-content { flex: 1; display: flex; flex-direction: column; position: relative; }
-        .header { background: var(--neon); color: #000; padding: 10px; font-weight: bold; text-align: center; font-size: 0.9em; letter-spacing: 2px; }
+        /* Area Principal */
+        .main { flex: 1; display: flex; flex-direction: column; }
+        .head { background: #00ffcc; color: #000; padding: 10px; font-weight: bold; text-align: center; }
+        .stats { background: #111; padding: 5px; border-bottom: 1px solid #333; display: flex; justify-content: space-around; font-size: 12px; color: gold; }
         
-        .stats-bar { background: #111; padding: 10px; border-bottom: 1px solid #222; display: flex; justify-content: space-around; font-size: 0.8em; color: var(--gold); }
-
-        #chat-area { flex: 1; padding: 20px; overflow-y: auto; background: rgba(0,0,0,0.8); }
-        .msg { margin-bottom: 10px; font-size: 0.9em; }
-        .sys { color: #888; font-style: italic; }
-
-        /* Área de Comandos */
-        .input-area { padding: 15px; background: #000; border-top: 2px solid #222; display: flex; }
-        input { flex: 1; background: #0a0a0a; border: 1px solid #333; color: white; padding: 10px; outline: none; }
-        input:focus { border-color: var(--neon); }
-        button { background: var(--neon); border: none; padding: 0 20px; font-weight: bold; cursor: pointer; margin-left: 10px; }
-
-        /* Estilo Prisión */
-        .mode-prison { border-color: var(--prison) !important; color: var(--prison) !important; }
-        .mode-prison .header { background: var(--prison); }
+        #chat { flex: 1; padding: 15px; overflow-y: auto; background: #050505; }
+        .input-box { display: flex; padding: 10px; background: #000; border-top: 2px solid #00ffcc; }
+        input { flex: 1; background: #000; border: 1px solid #00ffcc; color: #fff; padding: 10px; outline: none; }
+        
+        .pris-mode { border-color: #ff3366 !important; color: #ff3366 !important; }
     </style>
 </head>
 <body>
-
-    <div class="sidebar">
-        <h3>SEKAI NAVIGATOR</h3>
-        <button class="nav-btn active" onclick="changeChat('Centro')">🌐 Distrito Central</button>
-        <button class="nav-btn" onclick="changeChat('Lujo')">💎 Distrito de Lujo</button>
-        <button class="nav-btn" onclick="changeChat('Prisión')">⛓️ La Prisión</button>
-        <button class="nav-btn" onclick="changeChat('Privado')">🔒 Chat Privado</button>
-        <div style="margin-top: auto; font-size: 0.6em; color: #444;">v1.0 Compendio Sync</div>
+    <div class="nav">
+        <h2 style="font-size: 12px;">SEKAI NAV</h2>
+        <button onclick="move('CENTRO')">Centro</button>
+        <button onclick="move('LUJO')">Lujo</button>
+        <button onclick="move('PRISION')">Prisión</button>
     </div>
-
-    <div class="main-content" id="app">
-        <div class="header" id="current-title">DISTRITO CENTRAL</div>
-        
-        <div class="stats-bar">
-            <span>YEN: <span id="bal">1000</span>¥</span>
-            <span>RANGO: <span id="rango">Explorador</span></span>
-            <span>ESTADO: <span id="status">Libre</span></span>
+    <div class="main">
+        <div class="head" id="title">SEKAI CHAT: CENTRO</div>
+        <div class="stats">
+            <span>MONEY: <span id="money">1000</span>¥</span> | 
+            <span>STATUS: <span id="status">LIBRE</span></span>
         </div>
-
-        <div id="chat-area">
-            <p class="msg sys">[SISTEMA]: Bienvenido al Ecosistema Sekai. Todos los módulos cargados.</p>
+        <div id="chat">
+            <p>[SISTEMA]: Motor de élite cargado. Bienvenido, AXISS.</p>
         </div>
-
-        <div class="input-area">
-            <input type="text" id="userInput" placeholder="Escribe comando (gacha, heist, duelo)...">
-            <button onclick="execute()">ENVIAR</button>
+        <div class="input-box">
+            <input type="text" id="cmd" placeholder="Escribe gacha o heist...">
+            <button onclick="exe()" style="background:#00ffcc; border:none; padding:10px; font-weight:bold;">></button>
         </div>
     </div>
 
     <script>
-        let b = 1000, s = "Libre", chatActual = "Centro";
-        const area = document.getElementById('chat-area');
-
-        function changeChat(name) {
-            chatActual = name;
-            document.getElementById('current-title').innerText = name.toUpperCase();
-            
-            // Lógica de acceso
-            if(name === 'Lujo' && b < 5000) {
-                addMsg("SISTEMA", "Acceso Denegado. Necesitas 5000¥ para entrar al Distrito de Lujo.", "sys");
-                return;
-            }
-            
-            addMsg("SISTEMA", `Cambiando al canal: ${name}...`, "sys");
-            
-            // Cambiar colores si es Prisión
-            if(name === 'Prisión') {
-                document.getElementById('app').className = 'main-content mode-prison';
-            } else {
-                document.getElementById('app').className = 'main-content';
-            }
+        let m=1000, s="LIBRE";
+        function move(n) {
+            if(n==='LUJO' && m < 5000) { log("SISTEMA", "Necesitas 5000¥ para entrar al Distrito de Lujo."); return; }
+            document.getElementById('title').innerText = "SEKAI CHAT: " + n;
+            log("MAPA", "Viajando a " + n);
         }
-
-        function addMsg(user, text, type="") {
-            const p = document.createElement('p');
-            p.className = `msg ${type}`;
-            p.innerHTML = `<strong>${user}:</strong> ${text}`;
-            area.appendChild(p);
-            area.scrollTop = area.scrollHeight;
+        function log(u, t) {
+            const c = document.getElementById('chat');
+            c.innerHTML += `<p><strong>${u}:</strong> ${t}</p>`;
+            c.scrollTop = c.scrollHeight;
         }
-
-        function execute() {
-            const input = document.getElementById('userInput');
-            const cmd = input.value.toLowerCase().trim();
-            input.value = "";
-
-            if (s === "Prisionero" && cmd !== "fianza") {
-                addMsg("SISTEMA", "Estás procesado. Solo puedes usar 'fianza'.", "mode-prison");
-                return;
+        function exe() {
+            const i = document.getElementById('cmd');
+            const val = i.value.toLowerCase();
+            i.value = "";
+            if(val === 'gacha') { m-=500; log("GACHA", "¡Obtenido objeto RARO!"); }
+            else if(val === 'heist') { 
+                if(Math.random() > 0.5) { m+=1000; log("EXITO", "+1000¥"); }
+                else { s="PRESO"; log("ALERTA", "¡A LA PRISION!"); move('PRISION'); }
             }
-
-            if (cmd === "gacha") {
-                if(b >= 500) {
-                    b -= 500;
-                    const items = ["Llave de Cobre", "Daga de Cristal", "Ojo de Vigilante"];
-                    addMsg("GACHA", `¡Obtenido: ${items[Math.floor(Math.random()*items.length)]}!`);
-                }
-            } else if (cmd === "heist") {
-                if(Math.random() > 0.7) {
-                    b += 2000;
-                    addMsg("SISTEMA", "💰 Atraco exitoso. +2000¥ extraídos.");
-                } else {
-                    s = "Prisionero";
-                    changeChat('Prisión');
-                    addMsg("SEGURIDAD", "🚨 ¡CAPTURADO! Has sido enviado a la Prisión.", "mode-prison");
-                }
-            } else if (cmd === "fianza") {
-                if(b >= 1500) { b -= 1500; s = "Libre"; changeChat('Centro'); addMsg("SISTEMA", "Fianza pagada. Estás libre."); }
-            } else {
-                addMsg("TÚ", cmd);
-            }
-            
-            document.getElementById('bal').innerText = b;
+            document.getElementById('money').innerText = m;
             document.getElementById('status').innerText = s;
         }
     </script>
