@@ -3,267 +3,182 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SEKAI VOICE | GitHub Ops</title>
+    <title>SEKAI Radio Node</title>
     <style>
-        :root { 
-            --glow: #00ff00; 
-            --tx: #ff3333; 
-            --bg: #0a0a0a; 
-            --panel: #151515;
+        :root {
+            --bg-color: #8B4444; 
+            --lcd-bg: #000000;
+            --lcd-text: #FFD700;
+            --btn-dark: #000000;
+            --accent: #FFD700;
         }
 
-        body { 
-            background: var(--bg); 
-            color: white; 
-            font-family: 'Courier New', monospace; 
-            margin: 0; 
-            height: 100vh; 
-            overflow: hidden; 
-            display: flex; 
-            flex-direction: column;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-
-        /* Cabezal de Estado */
-        header {
-            padding: 30px 20px 10px;
-            text-align: center;
-        }
-
-        #status-text { 
-            font-size: 2.2rem; 
-            color: var(--glow); 
-            text-shadow: 0 0 20px var(--glow); 
+        body {
+            background-color: var(--bg-color);
             margin: 0;
-            transition: 0.2s;
-        }
-
-        #mode-info { 
-            font-size: 0.75rem; 
-            color: #555; 
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-top: 5px;
-        }
-
-        /* Zona Central Interactiva */
-        #main-display { 
-            flex: 1; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-        }
-
-        #visualizer-container { 
-            position: relative; 
-            width: 300px; 
-            height: 300px; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-        }
-
-        canvas { 
-            position: absolute; 
-            inset: 0; 
-            z-index: 1; 
-        }
-
-        #central-core { 
-            width: 110px; 
-            height: 110px; 
-            background: #111; 
-            border: 5px solid var(--glow); 
-            border-radius: 50%; 
-            z-index: 5; 
-            transition: transform 0.1s, border-color 0.2s, box-shadow 0.2s;
-            display: flex; 
-            justify-content: center; 
-            align-items: center;
-            box-shadow: 0 0 15px rgba(0, 255, 0, 0.2);
-        }
-
-        #central-core:active {
-            transform: scale(0.92);
-        }
-
-        /* Footer con ID de Operador */
-        footer { 
-            background: var(--panel); 
-            padding: 25px; 
-            border-top: 1px solid #222; 
-            display: flex; 
-            align-items: center; 
-            gap: 15px; 
-            border-radius: 30px 30px 0 0;
-        }
-
-        .avatar { 
-            width: 55px; 
-            height: 55px; 
-            border-radius: 50%; 
-            border: 2px solid var(--glow); 
-            background: #222 url('https://via.placeholder.com/150') center/cover; 
-        }
-
-        .info-box {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            height: 100vh;
             display: flex;
             flex-direction: column;
+            color: white;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .op-name { font-size: 0.9rem; font-weight: bold; color: var(--glow); }
-        .op-status { font-size: 0.65rem; color: #444; }
+        /* 1. BARRA SUPERIOR */
+        .top-bar { background: #000; color: var(--accent); text-align: center; padding: 10px; font-weight: bold; font-size: 14px; }
 
+        /* 2. SELECTORES DE CANAL */
+        .mode-selector { display: flex; justify-content: center; gap: 8px; padding: 15px; }
+        .pill { background: #1a1a1a; padding: 8px 18px; border-radius: 20px; font-size: 11px; color: #888; border: 1px solid #333; }
+        .pill.active { background: var(--accent); color: #000; font-weight: bold; }
+
+        /* 3. PANTALLA LCD */
+        .lcd-container {
+            background: var(--lcd-bg);
+            margin: 0 20px;
+            border-radius: 35px;
+            height: 160px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border: 6px solid #222;
+            position: relative;
+        }
+        #freq-display { font-size: 70px; color: var(--accent); font-family: 'Courier New', monospace; font-weight: bold; }
+        .lcd-icons { color: #222; font-size: 12px; margin-top: 5px; word-spacing: 12px; }
+
+        /* 4. BOTONES TÁCTICOS (PAD) */
+        .control-pad { display: flex; justify-content: center; gap: 15px; padding: 25px; }
+        .btn-square {
+            width: 55px; height: 50px; background: var(--btn-dark);
+            border-radius: 12px; display: flex; justify-content: center; align-items: center;
+            font-size: 20px; border: 1px solid #222; box-shadow: 0 4px 0 #111;
+        }
+        .btn-square:active { transform: translateY(2px); box-shadow: 0 2px 0 #000; }
+
+        /* 5. LISTA DE CONTACTOS */
+        .user-list { padding: 0 25px; flex: 1; overflow-y: auto; }
+        .list-item { 
+            background: rgba(0,0,0,0.15); padding: 12px; border-radius: 15px; 
+            margin-bottom: 8px; display: flex; align-items: center; gap: 12px; font-size: 14px;
+        }
+
+        /* 6. MICRÓFONO PTT */
+        .mic-area { position: relative; display: flex; justify-content: center; padding-bottom: 90px; }
+        #ptt-trigger {
+            width: 85px; height: 85px; background: var(--accent); border-radius: 50%;
+            border: 6px solid white; display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5); z-index: 10;
+        }
+        .mic-bubble {
+            position: absolute; top: -35px; background: white; color: black;
+            padding: 6px 15px; border-radius: 20px; font-size: 11px; font-weight: bold;
+        }
+
+        /* 7. NAVBAR INFERIOR */
+        nav { background: #000; height: 70px; display: flex; justify-content: space-around; align-items: center; position: fixed; bottom: 0; width: 100%; }
+        .nav-icon { text-align: center; color: #555; font-size: 10px; flex: 1; }
     </style>
 </head>
 <body>
 
-    <header>
-        <div id="status-text">144.500 MHz</div>
-        <div id="mode-info">SISTEMA LISTO</div>
-    </header>
+    <div class="top-bar">Tired of ADS ❓</div>
 
-    <div id="main-display">
-        <div id="visualizer-container">
-            <canvas id="visualizer" width="300" height="300"></canvas>
-            <div id="central-core">
-                <div style="width: 25px; height: 25px; border-radius: 50%; background: var(--glow); opacity: 0.4;"></div>
-            </div>
-        </div>
-        <p style="color: #333; font-size: 0.7rem; margin-top: 50px; text-align: center;">
-            MANTENER PARA HABLAR<br>1 SEGUNDO PARA BLOQUEO (LOCK)
-        </p>
+    <div class="mode-selector">
+        <div class="pill active" onclick="setMode(this)">Public</div>
+        <div class="pill" onclick="setMode(this)">Duo</div>
+        <div class="pill" onclick="setMode(this)">Private</div>
     </div>
 
-    <footer>
-        <div class="avatar"></div>
-        <div class="info-box">
-            <div class="op-name">OPERADOR SEKAI</div>
-            <div class="op-status">CONEXIÓN SEGURA • TERMINAL MÓVIL</div>
+    <div class="lcd-container">
+        <div style="position:absolute; top:15px; left:25px; color:#333; font-size:10px;">((•)) Live</div>
+        <div id="freq-display">64.45</div>
+        <div class="lcd-icons">♥ ⬢ ✈ ⚡ ⎔ ⬣</div>
+    </div>
+
+    <div class="control-pad">
+        <div class="btn-square" onclick="haptic(50)">▦</div>
+        <div class="btn-square" onclick="changeFreq(-0.05)">◀</div>
+        <div class="btn-square" onclick="changeFreq(0.05)">▶</div>
+        <div class="btn-square" onclick="resetFreq()">⇄</div>
+    </div>
+
+    <div class="user-list">
+        <div class="list-item" style="color: #666; border: 1px dashed #555;">+ Invite friends</div>
+        <div class="list-item">
+            <div style="width:30px; height:30px; background:#FF8C00; border-radius:8px;"></div>
+            <span>funnyWhistler</span>
         </div>
-    </footer>
+    </div>
+
+    <div class="mic-area">
+        <div class="mic-bubble">You can turn your mic ON</div>
+        <div id="ptt-trigger">
+            <span style="font-size:35px;">🎤</span>
+        </div>
+    </div>
+
+    <nav>
+        <div class="nav-icon">👥<br>Friends</div>
+        <div class="nav-icon">💬<br>Chat</div>
+        <div style="width:60px;"></div>
+        <div class="nav-icon">🛒<br>Shop</div>
+        <div class="nav-icon">👤<br>Profile</div>
+    </nav>
 
     <script>
-        let audioCtx, analyser, dataArray, canvas, ctx;
-        let pressTimer, isLocked = false, isTransmitting = false;
+        let currentFreq = 64.45;
+        const freqEl = document.getElementById('freq-display');
+        const ptt = document.getElementById('ptt-trigger');
+        let audioCtx;
 
-        const core = document.getElementById('central-core');
-        const statusText = document.getElementById('status-text');
-        const modeInfo = document.getElementById('mode-info');
+        // 1. CAMBIAR FRECUENCIA (Flechas)
+        function changeFreq(val) {
+            currentFreq = parseFloat((currentFreq + val).toFixed(2));
+            freqEl.innerText = currentFreq;
+            haptic(30);
+        }
 
-        // --- MOTOR DE AUDIO ---
-        async function startSystem() {
-            if (audioCtx) return;
+        // 2. RESET (Botón Shuffle)
+        function resetFreq() {
+            currentFreq = 64.45;
+            freqEl.innerText = currentFreq;
+            haptic(100);
+        }
+
+        // 3. SELECCIÓN DE CANAL
+        function setMode(el) {
+            document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+            el.classList.add('active');
+            haptic(40);
+        }
+
+        // 4. MICRÓFONO PTT
+        ptt.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if(!audioCtx) initAudio();
+            ptt.style.background = "#FF4444";
+            freqEl.style.color = "#FF4444";
+            haptic(60);
+        });
+
+        ptt.addEventListener('touchend', () => {
+            ptt.style.background = "var(--accent)";
+            freqEl.style.color = "var(--accent)";
+            haptic(20);
+        });
+
+        function haptic(ms) {
+            if (navigator.vibrate) navigator.vibrate(ms);
+        }
+
+        async function initAudio() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                analyser = audioCtx.createAnalyser();
-                const source = audioCtx.createMediaStreamSource(stream);
-                analyser.fftSize = 64;
-                dataArray = new Uint8Array(analyser.frequencyBinCount);
-                source.connect(analyser);
-                
-                canvas = document.getElementById('visualizer');
-                ctx = canvas.getContext('2d');
-                draw();
-            } catch (e) {
-                alert("Error: Activa el micrófono para usar el chat.");
-            }
-        }
-
-        function draw() {
-            requestAnimationFrame(draw);
-            analyser.getByteFrequencyData(dataArray);
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            const cx = canvas.width/2, cy = canvas.height/2;
-            
-            dataArray.forEach((val, i) => {
-                const angle = (i * 2 * Math.PI) / dataArray.length;
-                const h = (val / 255) * 60; // Altura reactiva
-                ctx.strokeStyle = isTransmitting ? '#ff3333' : '#00ff00';
-                ctx.lineWidth = 4;
-                ctx.lineCap = 'round';
-                ctx.beginPath();
-                ctx.moveTo(cx + Math.cos(angle)*75, cy + Math.sin(angle)*75);
-                ctx.lineTo(cx + Math.cos(angle)*(75+h), cy + Math.sin(angle)*(75+h));
-                ctx.stroke();
-            });
-
-            // Pequeña pulsación en el núcleo
-            const scale = 1 + (dataArray[10] / 255) * 0.1;
-            core.style.transform = `scale(${scale})`;
-        }
-
-        // --- SONIDOS TÁCTICOS ---
-        function playTone(type) {
-            const ac = new (window.AudioContext || window.webkitAudioContext)();
-            const o = ac.createOscillator();
-            const g = ac.createGain();
-            o.connect(g); g.connect(ac.destination);
-            g.gain.value = 0.08;
-
-            if(type === 'in') {
-                o.frequency.value = 900; 
-                o.start(); 
-                o.stop(ac.currentTime + 0.06);
-            } else {
-                // Roger Beep Clásico
-                o.frequency.setValueAtTime(1100, ac.currentTime);
-                o.start();
-                o.frequency.exponentialRampToValueAtTime(550, ac.currentTime + 0.2);
-                o.stop(ac.currentTime + 0.2);
-            }
-        }
-
-        // --- CONTROL TÁCTIL (MÓVIL) ---
-        core.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            if(isLocked) return;
-            
-            startTX();
-            pressTimer = setTimeout(lockTX, 1000);
-        });
-
-        core.addEventListener('touchend', () => {
-            clearTimeout(pressTimer);
-            if(!isLocked) stopTX();
-        });
-
-        // Click para liberar el bloqueo
-        core.addEventListener('click', () => {
-            if(isLocked) stopTX();
-        });
-
-        function startTX() {
-            isTransmitting = true;
-            startSystem(); // Inicia audio al primer toque
-            playTone('in');
-            
-            core.style.borderColor = 'var(--tx)';
-            core.style.boxShadow = '0 0 30px rgba(255, 51, 51, 0.4)';
-            statusText.style.color = 'var(--tx)';
-            statusText.style.textShadow = '0 0 20px var(--tx)';
-            modeInfo.innerText = "TRANSMITIENDO...";
-        }
-
-        function stopTX() {
-            if(isTransmitting) playTone('out');
-            isTransmitting = false; 
-            isLocked = false;
-            
-            core.style.borderColor = 'var(--glow)';
-            core.style.boxShadow = '0 0 15px rgba(0, 255, 0, 0.2)';
-            statusText.style.color = 'var(--glow)';
-            statusText.style.textShadow = '0 0 20px var(--glow)';
-            modeInfo.innerText = "SISTEMA LISTO";
-        }
-
-        function lockTX() {
-            isLocked = true;
-            modeInfo.innerText = "MODO MANOS LIBRES (LOCKED)";
-            if(navigator.vibrate) navigator.vibrate([100, 50, 100]); // Vibración de confirmación
+            } catch (e) { console.log("Mic access denied"); }
         }
     </script>
 </body>
