@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SEKAI Radio Node</title>
+    <title>SEKAI Radio Node | Live Reactions</title>
     <style>
         :root {
             --bg-color: #8B4444; 
@@ -16,29 +16,25 @@
         body {
             background-color: var(--bg-color);
             margin: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, sans-serif;
             height: 100vh;
             display: flex;
             flex-direction: column;
             color: white;
             user-select: none;
+            overflow: hidden;
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* 1. BARRA SUPERIOR */
+        /* BARRA SUPERIOR */
         .top-bar { background: #000; color: var(--accent); text-align: center; padding: 10px; font-weight: bold; font-size: 14px; }
 
-        /* 2. SELECTORES DE CANAL */
-        .mode-selector { display: flex; justify-content: center; gap: 8px; padding: 15px; }
-        .pill { background: #1a1a1a; padding: 8px 18px; border-radius: 20px; font-size: 11px; color: #888; border: 1px solid #333; }
-        .pill.active { background: var(--accent); color: #000; font-weight: bold; }
-
-        /* 3. PANTALLA LCD */
+        /* PANTALLA LCD */
         .lcd-container {
             background: var(--lcd-bg);
-            margin: 0 20px;
+            margin: 15px 20px;
             border-radius: 35px;
-            height: 160px;
+            height: 140px;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -46,77 +42,130 @@
             border: 6px solid #222;
             position: relative;
         }
-        #freq-display { font-size: 70px; color: var(--accent); font-family: 'Courier New', monospace; font-weight: bold; }
-        .lcd-icons { color: #222; font-size: 12px; margin-top: 5px; word-spacing: 12px; }
+        #freq-display { font-size: 60px; color: var(--accent); font-family: 'Courier New', monospace; font-weight: bold; }
 
-        /* 4. BOTONES TÁCTICOS (PAD) */
-        .control-pad { display: flex; justify-content: center; gap: 15px; padding: 25px; }
+        /* BOTONES DE CONTROL */
+        .control-pad { display: flex; justify-content: center; gap: 12px; padding: 10px 20px; }
         .btn-square {
-            width: 55px; height: 50px; background: var(--btn-dark);
-            border-radius: 12px; display: flex; justify-content: center; align-items: center;
-            font-size: 20px; border: 1px solid #222; box-shadow: 0 4px 0 #111;
-        }
-        .btn-square:active { transform: translateY(2px); box-shadow: 0 2px 0 #000; }
-
-        /* 5. LISTA DE CONTACTOS */
-        .user-list { padding: 0 25px; flex: 1; overflow-y: auto; }
-        .list-item { 
-            background: rgba(0,0,0,0.15); padding: 12px; border-radius: 15px; 
-            margin-bottom: 8px; display: flex; align-items: center; gap: 12px; font-size: 14px;
+            width: 50px; height: 45px; background: var(--btn-dark);
+            border-radius: 10px; display: flex; justify-content: center; align-items: center;
+            font-size: 18px; border: 1px solid #222;
         }
 
-        /* 6. MICRÓFONO PTT */
-        .mic-area { position: relative; display: flex; justify-content: center; padding-bottom: 90px; }
+        /* --- NUEVA BARRA DE EMOTICONOS (ESTILO FACEBOOK) --- */
+        .reaction-area {
+            display: flex;
+            align-items: center;
+            padding: 15px 25px;
+            gap: 10px;
+            z-index: 20;
+        }
+
+        .reaction-bar {
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 30px;
+            display: flex;
+            overflow-x: auto;
+            width: 0;
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            white-space: nowrap;
+            padding: 0;
+            scrollbar-width: none;
+        }
+        .reaction-bar::-webkit-scrollbar { display: none; }
+
+        .reaction-bar.open {
+            width: 100%;
+            opacity: 1;
+            padding: 10px 20px;
+            border: 1px solid var(--accent);
+        }
+
+        .reaction-bar span {
+            font-size: 30px;
+            margin: 0 12px;
+            transition: transform 0.2s;
+            display: inline-block;
+        }
+
+        #emoji-trigger {
+            min-width: 45px; height: 45px;
+            background: var(--accent);
+            color: black; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 24px; font-weight: bold;
+        }
+
+        /* ESCENARIO DE ANIMACIÓN */
+        #chat-stage {
+            position: fixed;
+            top: 45%; left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        @keyframes emojiFlight {
+            0% { transform: scale(0) translateY(100px); opacity: 0; }
+            30% { transform: scale(3.5) translateY(0); opacity: 1; }
+            100% { transform: scale(2) translateY(-250px); opacity: 0; }
+        }
+
+        .flying-emoji {
+            font-size: 60px;
+            animation: emojiFlight 1.2s forwards ease-out;
+            text-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        /* MICRÓFONO PTT */
+        .mic-area { display: flex; justify-content: center; flex: 1; align-items: center; padding-bottom: 80px; }
         #ptt-trigger {
-            width: 85px; height: 85px; background: var(--accent); border-radius: 50%;
+            width: 90px; height: 90px; background: var(--accent); border-radius: 50%;
             border: 6px solid white; display: flex; justify-content: center; align-items: center;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.5); z-index: 10;
-        }
-        .mic-bubble {
-            position: absolute; top: -35px; background: white; color: black;
-            padding: 6px 15px; border-radius: 20px; font-size: 11px; font-weight: bold;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
         }
 
-        /* 7. NAVBAR INFERIOR */
+        /* NAVBAR */
         nav { background: #000; height: 70px; display: flex; justify-content: space-around; align-items: center; position: fixed; bottom: 0; width: 100%; }
-        .nav-icon { text-align: center; color: #555; font-size: 10px; flex: 1; }
+        .nav-icon { text-align: center; color: #444; font-size: 10px; }
     </style>
 </head>
 <body>
 
     <div class="top-bar">Tired of ADS ❓</div>
 
-    <div class="mode-selector">
-        <div class="pill active" onclick="setMode(this)">Public</div>
-        <div class="pill" onclick="setMode(this)">Duo</div>
-        <div class="pill" onclick="setMode(this)">Private</div>
-    </div>
-
     <div class="lcd-container">
-        <div style="position:absolute; top:15px; left:25px; color:#333; font-size:10px;">((•)) Live</div>
         <div id="freq-display">64.45</div>
-        <div class="lcd-icons">♥ ⬢ ✈ ⚡ ⎔ ⬣</div>
+        <div style="color:#222; font-size:12px; margin-top:5px;">♥ ⬢ ✈ ⚡ ⎔ ⬣</div>
     </div>
 
     <div class="control-pad">
-        <div class="btn-square" onclick="haptic(50)">▦</div>
+        <div class="btn-square" onclick="haptic(40)">▦</div>
         <div class="btn-square" onclick="changeFreq(-0.05)">◀</div>
         <div class="btn-square" onclick="changeFreq(0.05)">▶</div>
         <div class="btn-square" onclick="resetFreq()">⇄</div>
     </div>
 
-    <div class="user-list">
-        <div class="list-item" style="color: #666; border: 1px dashed #555;">+ Invite friends</div>
-        <div class="list-item">
-            <div style="width:30px; height:30px; background:#FF8C00; border-radius:8px;"></div>
-            <span>funnyWhistler</span>
+    <div class="reaction-area">
+        <div id="emoji-trigger" onclick="toggleEmojis()">＋</div>
+        <div id="reaction-bar" class="reaction-bar">
+            <span onclick="sendEmoji('❤️')">❤️</span>
+            <span onclick="sendEmoji('😂')">😂</span>
+            <span onclick="sendEmoji('😲')">😲</span>
+            <span onclick="sendEmoji('🔥')">🔥</span>
+            <span onclick="sendEmoji('🚀')">🚀</span>
+            <span onclick="sendEmoji('⚡')">⚡</span>
+            <span onclick="sendEmoji('💎')">💎</span>
+            <span onclick="sendEmoji('👑')">👑</span>
         </div>
     </div>
 
+    <div id="chat-stage"></div>
+
     <div class="mic-area">
-        <div class="mic-bubble">You can turn your mic ON</div>
         <div id="ptt-trigger">
-            <span style="font-size:35px;">🎤</span>
+            <span style="font-size:35px;">🎙️</span>
         </div>
     </div>
 
@@ -132,33 +181,38 @@
         let currentFreq = 64.45;
         const freqEl = document.getElementById('freq-display');
         const ptt = document.getElementById('ptt-trigger');
-        let audioCtx;
+        const bar = document.getElementById('reaction-bar');
 
-        // 1. CAMBIAR FRECUENCIA (Flechas)
+        function toggleEmojis() {
+            bar.classList.toggle('open');
+            haptic(50);
+        }
+
+        function sendEmoji(emoji) {
+            const stage = document.getElementById('chat-stage');
+            const el = document.createElement('div');
+            el.className = 'flying-emoji';
+            el.innerText = emoji;
+            stage.appendChild(el);
+            
+            haptic(70);
+            setTimeout(() => { el.remove(); }, 1200);
+        }
+
         function changeFreq(val) {
             currentFreq = parseFloat((currentFreq + val).toFixed(2));
             freqEl.innerText = currentFreq;
             haptic(30);
         }
 
-        // 2. RESET (Botón Shuffle)
         function resetFreq() {
             currentFreq = 64.45;
             freqEl.innerText = currentFreq;
             haptic(100);
         }
 
-        // 3. SELECCIÓN DE CANAL
-        function setMode(el) {
-            document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
-            el.classList.add('active');
-            haptic(40);
-        }
-
-        // 4. MICRÓFONO PTT
         ptt.addEventListener('touchstart', (e) => {
             e.preventDefault();
-            if(!audioCtx) initAudio();
             ptt.style.background = "#FF4444";
             freqEl.style.color = "#FF4444";
             haptic(60);
@@ -172,13 +226,6 @@
 
         function haptic(ms) {
             if (navigator.vibrate) navigator.vibrate(ms);
-        }
-
-        async function initAudio() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            } catch (e) { console.log("Mic access denied"); }
         }
     </script>
 </body>
