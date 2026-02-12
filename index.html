@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SEKAI Radio Node | Private Jump</title>
+    <title>SEKAI Radio | Instant Jump</title>
     <style>
         :root {
             --bg-color: #8B4444; 
@@ -18,13 +18,12 @@
             color: white; overflow: hidden;
         }
 
-        /* --- CABECERA --- */
+        /* --- HEADER --- */
         .top-bar { background: #000; color: var(--accent); text-align: center; padding: 12px; font-weight: bold; }
         
         .mode-selector { display: flex; justify-content: center; gap: 10px; padding: 10px; background: rgba(0,0,0,0.1); }
         .mode-btn { padding: 6px 15px; border-radius: 20px; font-size: 12px; background: #333; color: #888; cursor: pointer; border: none; }
         .mode-btn.active { background: var(--accent); color: black; font-weight: bold; }
-        #btn-private.active { background: #ff4444; color: white; }
 
         /* --- LCD --- */
         .lcd-container {
@@ -59,7 +58,6 @@
             border: 4px solid white; display: flex; justify-content: center; align-items: center;
         }
 
-        /* PANEL AMIGOS */
         #panel-friends {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: var(--bg-color); display: none; flex-direction: column; z-index: 5000;
@@ -72,8 +70,8 @@
 
     <div class="mode-selector">
         <button class="mode-btn active" id="btn-public" onclick="switchToPublic()">Public</button>
-        <button class="mode-btn" id="btn-duo" onclick="setMode('duo', this)">Duo</button>
-        <button class="mode-btn" id="btn-private" onclick="createPrivateChannel(this)">Private</button>
+        <button class="mode-btn" id="btn-duo" onclick="executeJump('duo')">Duo</button>
+        <button class="mode-btn" id="btn-private" onclick="executeJump('private')">Private</button>
     </div>
 
     <div class="lcd-container" id="lcd-main">
@@ -112,7 +110,7 @@
     <div id="panel-friends">
         <div style="background:#000; padding:20px; display:flex; align-items:center; gap:20px;">
             <span onclick="closeFriends()" style="cursor:pointer; font-size:25px;">←</span>
-            <b id="panel-title">Invitar Amigos</b>
+            <b>Invitar Amigos</b>
         </div>
         <div id="friends-list" style="padding:20px;"></div>
     </div>
@@ -122,56 +120,58 @@
         let myName = "FunnyWhiffor";
         let guestCount = 0;
 
-        function setMode(mode, btn) {
-            if(mode === 'private') return; // Se maneja en otra función
-            currentMode = mode;
-            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            document.getElementById('status-label').innerText = mode.toUpperCase() + " FREQUENCY";
-            updateOccupancy();
-        }
+        // SALTO INSTANTÁNEO SIN CONFIRMACIÓN
+        function executeJump(newMode) {
+            if(currentMode === newMode) return;
 
-        // --- FUNCIÓN CLAVE: CREAR CANAL PRIVADO ---
-        function createPrivateChannel(btn) {
-            // 1. Confirmación de salida del chat público
-            const confirmOut = confirm("¿Quieres crear tu propia sala privada? Abandonarás la frecuencia pública actual.");
+            currentMode = newMode;
             
-            if(confirmOut) {
-                currentMode = "private";
-                // 2. Cambiar UI de botones
-                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                
-                // 3. Simular cambio de frecuencia (Nueva ID única)
-                const nuevaFreq = (Math.random() * 100).toFixed(2);
-                document.getElementById('freq-display').innerText = nuevaFreq;
-                
-                // 4. Limpiar lista de otros usuarios (ahora estás solo en tu nueva sala)
-                const flow = document.getElementById('users-flow');
-                flow.innerHTML = `
-                    <div class="list-item">
-                        <div class="profile-circle" id="my-avatar">🏠</div>
-                        <span>${myName}</span>
-                    </div>`;
-                
-                guestCount = 0;
-                document.getElementById('status-label').innerText = "YOUR PRIVATE ROOM";
-                document.getElementById('status-label').style.color = "#ff4444";
-                updateOccupancy();
-                
-                alert("Has creado una sala privada. Tu cupo en la frecuencia anterior ha sido liberado.");
-            }
+            // UI de botones
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('btn-' + newMode).classList.add('active');
+
+            // Salto de frecuencia automático
+            const nuevaFreq = (Math.random() * 10).toFixed(2);
+            document.getElementById('freq-display').innerText = nuevaFreq;
+            
+            // Reset de lista y liberación de cupo público
+            document.getElementById('users-flow').innerHTML = `
+                <div class="list-item">
+                    <div class="profile-circle" id="my-avatar">🏠</div>
+                    <span>${myName}</span>
+                </div>`;
+            
+            guestCount = 0;
+            document.getElementById('status-label').innerText = newMode.toUpperCase() + " SESSION";
+            document.getElementById('status-label').style.color = "#ff4444";
+            
+            updateOccupancy();
+
+            // Pequeña vibración de feedback
+            if(navigator.vibrate) navigator.vibrate([30, 50, 30]);
         }
 
         function switchToPublic() {
-            location.reload(); // Recarga para volver al estado público inicial
+            if(currentMode === 'public') return;
+            // Para volver al público simplemente recargamos o reseteamos a la freq base
+            currentMode = "public";
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('btn-public').classList.add('active');
+            document.getElementById('freq-display').innerText = "64.45";
+            document.getElementById('status-label').innerText = "GLOBAL FREQUENCY";
+            document.getElementById('status-label').style.color = "#555";
+            updateOccupancy();
         }
 
         function openFriends() {
+            if(currentMode === 'public') {
+                alert("Activa Duo o Private para invitar amigos.");
+                return;
+            }
             document.getElementById('panel-friends').style.display = 'flex';
             const list = document.getElementById('friends-list');
             list.innerHTML = "";
-            const friends = ["Cyber_Girl", "Alex_Radio", "User_88", "Beta_Max"];
+            const friends = ["Cyber_Girl", "Alex_Radio", "User_88"];
             
             friends.forEach(name => {
                 list.innerHTML += `
@@ -185,16 +185,14 @@
 
         function invite(name) {
             const max = (currentMode === 'duo') ? 1 : 14;
-            if(guestCount >= max) {
-                alert("Sala llena para este modo.");
-                return;
-            }
+            if(guestCount >= max) return;
             
             guestCount++;
             document.getElementById('users-flow').innerHTML += `
                 <div class="list-item">
                     <div class="profile-circle">👤</div>
                     <span>${name}</span>
+                    <span onclick="this.parentElement.remove(); guestCount--; updateOccupancy();" style="margin-left:auto; color:red; font-size:20px; padding:10px;">×</span>
                 </div>`;
             closeFriends();
             updateOccupancy();
