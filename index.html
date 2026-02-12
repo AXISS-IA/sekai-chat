@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SEKAI Radio Node | Final Build</title>
+    <title>SEKAI Radio Node | Private Jump</title>
     <style>
         :root {
             --bg-color: #8B4444; 
             --accent: #FFD700;
             --lcd-bg: #000;
-            --btn-dark: #1a1a1a;
         }
 
         body {
@@ -19,58 +18,45 @@
             color: white; overflow: hidden;
         }
 
-        /* --- TOP BAR --- */
-        .top-bar { background: #000; color: var(--accent); text-align: center; padding: 12px; font-weight: bold; font-size: 14px; }
+        /* --- CABECERA --- */
+        .top-bar { background: #000; color: var(--accent); text-align: center; padding: 12px; font-weight: bold; }
         
-        .mode-selector { 
-            display: flex; justify-content: center; gap: 10px; padding: 10px; 
-            background: rgba(0,0,0,0.1);
-        }
-        .mode-btn { 
-            padding: 6px 15px; border-radius: 20px; font-size: 12px; 
-            background: #333; color: #888; cursor: pointer; border: none;
-        }
+        .mode-selector { display: flex; justify-content: center; gap: 10px; padding: 10px; background: rgba(0,0,0,0.1); }
+        .mode-btn { padding: 6px 15px; border-radius: 20px; font-size: 12px; background: #333; color: #888; cursor: pointer; border: none; }
         .mode-btn.active { background: var(--accent); color: black; font-weight: bold; }
+        #btn-private.active { background: #ff4444; color: white; }
 
-        /* --- LCD DISPLAY --- */
+        /* --- LCD --- */
         .lcd-container {
             background: var(--lcd-bg); margin: 15px 20px; border-radius: 35px;
             height: 120px; display: flex; flex-direction: column;
             justify-content: center; align-items: center; border: 5px solid #222;
-            transition: 0.3s;
         }
         #freq-display { font-size: 55px; color: var(--accent); font-family: monospace; font-weight: bold; }
 
-        /* --- LISTA DE USUARIOS --- */
+        /* --- LISTA --- */
         .user-list { flex: 1; padding: 0 20px; overflow-y: auto; }
-        .user-list::-webkit-scrollbar { display: none; }
-
         .list-item {
             background: #A0A0A0; margin: 8px 0; padding: 10px 15px;
             border-radius: 20px; color: black; display: flex;
             align-items: center; gap: 12px; font-weight: bold;
         }
 
-        /* PERFIL REDONDO Y BRILLO */
         .profile-circle {
             width: 42px; height: 42px; border-radius: 50%;
             background: #000; border: 2px solid var(--accent);
             overflow: hidden; display: flex; justify-content: center; align-items: center;
-            transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .profile-circle img, .profile-circle video { width: 100%; height: 100%; object-fit: cover; }
-        .speaking { box-shadow: 0 0 20px var(--accent), 0 0 30px var(--accent); transform: scale(1.1); border-color: white; }
+        .speaking { box-shadow: 0 0 20px var(--accent); transform: scale(1.1); border-color: white; }
 
-        /* --- BOTONES INFERIORES --- */
+        /* --- NAV --- */
         nav { background: #000; height: 75px; display: flex; justify-content: space-around; align-items: center; position: fixed; bottom: 0; width: 100%; }
-        .nav-icon { text-align: center; color: #777; font-size: 11px; cursor: pointer; }
+        .nav-icon { text-align: center; color: #777; font-size: 11px; }
 
         .mic-area { position: fixed; bottom: 90px; width: 100%; display: flex; justify-content: center; }
         #ptt-btn {
             width: 85px; height: 85px; background: var(--accent); border-radius: 50%;
             border: 4px solid white; display: flex; justify-content: center; align-items: center;
-            cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.4);
         }
 
         /* PANEL AMIGOS */
@@ -85,20 +71,20 @@
     <div class="top-bar">Tired of ADS ❓</div>
 
     <div class="mode-selector">
-        <button class="mode-btn" onclick="setMode('public', this)">Public</button>
-        <button class="mode-btn active" onclick="setMode('duo', this)">Duo</button>
-        <button class="mode-btn" onclick="setMode('private', this)">Private</button>
+        <button class="mode-btn active" id="btn-public" onclick="switchToPublic()">Public</button>
+        <button class="mode-btn" id="btn-duo" onclick="setMode('duo', this)">Duo</button>
+        <button class="mode-btn" id="btn-private" onclick="createPrivateChannel(this)">Private</button>
     </div>
 
-    <div class="lcd-container">
-        <div id="status-label" style="font-size: 10px; color: #555;">DUO MODE ACTIVE</div>
+    <div class="lcd-container" id="lcd-main">
+        <div id="status-label" style="font-size: 10px; color: #555;">GLOBAL FREQUENCY</div>
         <div id="freq-display">64.45</div>
-        <div id="occupancy" style="color: #444; font-size: 12px;">1 / 2 Residents</div>
+        <div id="occupancy" style="color: #444; font-size: 12px;">1 / 15 Residents</div>
     </div>
 
     <div class="user-list">
-        <div id="invite-box" class="list-item" style="background: #ccc; cursor: pointer;" onclick="openFriends()">
-            <span style="color:var(--accent); font-size:22px;">＋</span> Invite a Friend (Duo)
+        <div class="list-item" style="background: #ccc; cursor: pointer;" onclick="openFriends()">
+            <span style="color:var(--accent); font-size:22px;">＋</span> Invite Friends
         </div>
         
         <div id="users-flow">
@@ -126,90 +112,111 @@
     <div id="panel-friends">
         <div style="background:#000; padding:20px; display:flex; align-items:center; gap:20px;">
             <span onclick="closeFriends()" style="cursor:pointer; font-size:25px;">←</span>
-            <b>Invitar al Duo (Máx 1)</b>
+            <b id="panel-title">Invitar Amigos</b>
         </div>
-        <div id="friends-list" style="padding:20px;">
-            </div>
+        <div id="friends-list" style="padding:20px;"></div>
     </div>
 
     <script>
-        let duoPartner = null;
-        let mode = "duo";
+        let currentMode = "public";
+        let myName = "FunnyWhiffor";
+        let guestCount = 0;
 
-        function setMode(m, btn) {
-            mode = m;
+        function setMode(mode, btn) {
+            if(mode === 'private') return; // Se maneja en otra función
+            currentMode = mode;
             document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            document.getElementById('status-label').innerText = m.toUpperCase() + " MODE ACTIVE";
+            document.getElementById('status-label').innerText = mode.toUpperCase() + " FREQUENCY";
             updateOccupancy();
         }
 
-        function openFriends() {
-            if (mode === 'duo' && duoPartner) {
-                alert("Tu Duo ya tiene un invitado. Elimínalo para invitar a otro.");
-                return;
+        // --- FUNCIÓN CLAVE: CREAR CANAL PRIVADO ---
+        function createPrivateChannel(btn) {
+            // 1. Confirmación de salida del chat público
+            const confirmOut = confirm("¿Quieres crear tu propia sala privada? Abandonarás la frecuencia pública actual.");
+            
+            if(confirmOut) {
+                currentMode = "private";
+                // 2. Cambiar UI de botones
+                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                // 3. Simular cambio de frecuencia (Nueva ID única)
+                const nuevaFreq = (Math.random() * 100).toFixed(2);
+                document.getElementById('freq-display').innerText = nuevaFreq;
+                
+                // 4. Limpiar lista de otros usuarios (ahora estás solo en tu nueva sala)
+                const flow = document.getElementById('users-flow');
+                flow.innerHTML = `
+                    <div class="list-item">
+                        <div class="profile-circle" id="my-avatar">🏠</div>
+                        <span>${myName}</span>
+                    </div>`;
+                
+                guestCount = 0;
+                document.getElementById('status-label').innerText = "YOUR PRIVATE ROOM";
+                document.getElementById('status-label').style.color = "#ff4444";
+                updateOccupancy();
+                
+                alert("Has creado una sala privada. Tu cupo en la frecuencia anterior ha sido liberado.");
             }
+        }
+
+        function switchToPublic() {
+            location.reload(); // Recarga para volver al estado público inicial
+        }
+
+        function openFriends() {
             document.getElementById('panel-friends').style.display = 'flex';
             const list = document.getElementById('friends-list');
             list.innerHTML = "";
+            const friends = ["Cyber_Girl", "Alex_Radio", "User_88", "Beta_Max"];
             
-            // Simulación de amigos conectados
-            const onlineFriends = ["Cyber_Girl", "Alex_Radio", "User_77"];
-            onlineFriends.forEach(name => {
+            friends.forEach(name => {
                 list.innerHTML += `
-                    <div class="list-item" onclick="invitePartner('${name}')">
+                    <div class="list-item" onclick="invite('${name}')">
                         <div class="profile-circle">👤</div>
                         <span>${name}</span>
-                        <button style="margin-left:auto; background:var(--accent); border:none; padding:8px 12px; border-radius:10px; font-weight:bold;">Invitar</button>
+                        <button style="margin-left:auto; background:var(--accent); border:none; padding:8px; border-radius:10px; font-weight:bold;">Invitar</button>
                     </div>`;
             });
         }
 
-        function invitePartner(name) {
-            duoPartner = name;
-            const flow = document.getElementById('users-flow');
-            flow.innerHTML += `
-                <div class="list-item" id="partner-row">
+        function invite(name) {
+            const max = (currentMode === 'duo') ? 1 : 14;
+            if(guestCount >= max) {
+                alert("Sala llena para este modo.");
+                return;
+            }
+            
+            guestCount++;
+            document.getElementById('users-flow').innerHTML += `
+                <div class="list-item">
                     <div class="profile-circle">👤</div>
                     <span>${name}</span>
-                    <span onclick="removePartner()" style="margin-left:auto; color:#800; font-size:24px; padding:0 10px;">×</span>
                 </div>`;
             closeFriends();
             updateOccupancy();
         }
 
-        function removePartner() {
-            duoPartner = null;
-            const p = document.getElementById('partner-row');
-            if(p) p.remove();
-            updateOccupancy();
-        }
-
         function updateOccupancy() {
             const occ = document.getElementById('occupancy');
-            if(mode === 'duo') {
-                occ.innerText = duoPartner ? "2 / 2 (Full Duo)" : "1 / 2 Residents";
-            } else {
-                occ.innerText = (duoPartner ? "2" : "1") + " / 15 Residents";
-            }
+            const total = (currentMode === 'duo') ? 2 : 15;
+            occ.innerText = (guestCount + 1) + " / " + total + " Residents";
         }
 
         function closeFriends() { document.getElementById('panel-friends').style.display = 'none'; }
 
         function talk(isTalking) {
             const avatar = document.getElementById('my-avatar');
-            const freqDisp = document.getElementById('freq-display');
-            const btn = document.getElementById('ptt-btn');
-            
+            const freq = document.getElementById('freq-display');
             if(isTalking) {
                 avatar.classList.add('speaking');
-                freqDisp.style.color = "#ff4444"; // Color de transmisión
-                btn.style.background = "white";
-                if(navigator.vibrate) navigator.vibrate(40);
+                freq.style.color = "#ff4444";
             } else {
                 avatar.classList.remove('speaking');
-                freqDisp.style.color = "var(--accent)";
-                btn.style.background = "var(--accent)";
+                freq.style.color = "var(--accent)";
             }
         }
     </script>
